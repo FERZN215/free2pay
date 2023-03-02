@@ -10,6 +10,8 @@ from config import BOT_TOKEN, MONGO_API
 from start.preview import preview
 from start.registration import *
 
+from exchange.exchange import *
+
 
 
 client = MongoClient(MONGO_API)
@@ -46,7 +48,22 @@ async def password_handler(message:types.Message, state:FSMContext):
     await password_process(message, state, db)
 
 
+@dp.callback_query_handler(lambda c: c.data == "buy" or c.data == "sell")
+async def exchange_handler(call: types.CallbackQuery, state: FSMContext):
+    await call.message.delete()
+    await exchange_process(call,state)
 
+
+@dp.callback_query_handler(lambda c: c.data.startswith("game_"), state=exchange_states.game)
+async def category_handler(call:types.CallbackQuery, state: FSMContext):
+    await call.message.delete()
+    await category_process(call, state)
+
+@dp.callback_query_handler(lambda c: c.data.startswith("cat_"), state=exchange_states.game_type)
+async def init_handler(call: types.CallbackQuery, state: FSMContext):
+    await call.message.delete()
+    await init_process(call, state)
+    await state.finish() #Удалить перед модификацией
 
 
 
