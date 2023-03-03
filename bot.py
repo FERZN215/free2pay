@@ -34,8 +34,8 @@ async def registration_handler(call: types.CallbackQuery):
 
 @dp.callback_query_handler(lambda c: c.data.startswith('license_'))
 async def license_agreement_handler(call: types.CallbackQuery):
-    await call.message.delete()
     await license_agreement_process(call, db)
+    await call.message.delete()
 
 @dp.message_handler(state= registration_states.nickname)
 async def nickname_handler(message:types.Message, state:FSMContext):
@@ -44,10 +44,6 @@ async def nickname_handler(message:types.Message, state:FSMContext):
 @dp.message_handler(state= registration_states.password)
 async def password_handler(message:types.Message, state:FSMContext):
     await password_process(message, state, db)
-
-
-
-
 
 
 

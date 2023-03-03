@@ -11,7 +11,6 @@ class registration_states(StatesGroup):
     nickname = State()
     password = State()
 
-
 async def license_agreement(message:types.Message):
     await message.answer("Просим ознакомиться и принять принять лицензионное соглашение", reply_markup=license_agreement_kb)
 
@@ -40,4 +39,3 @@ async def password_process(message:types.Message, state:FSMContext, db):
         collection.insert_one({"username": message.from_user.username, "local_name": data.get("nickname"), "telegram_id": message.chat.id, "password": data.get("password"), "status":"default", "balance":0.00, "bill_id":"","chats":[], "freeze_balance":[], "statistics":{"total":0,"successful":0,"arbitration":0}, "reviews":[]})
         await state.finish()
         await personal_area(message, db)
-
