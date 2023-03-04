@@ -3,7 +3,7 @@ from aiogram import types
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from keyboards.license_agreement import license_agreement_kb
-
+from keyboards.menu import menu_kb
 from start.preview import preview
 from start.personal_area import personal_area
 
@@ -27,6 +27,9 @@ async def license_agreement_process(call: types.CallbackQuery, db):
 
 
 async def password(message: types.Message, state: FSMContext):
+    if(len(message.text)) > 15:
+        await message.answer("Поменьше")
+        return
     await state.update_data(nickname=message.text)
     await registration_states.password.set()
     await message.answer(
@@ -44,6 +47,7 @@ async def password_process(message: types.Message, state: FSMContext, db):
         collection.insert_one(
             {"username": message.from_user.username, "local_name": data.get("nickname"), "telegram_id": message.chat.id,
              "password": data.get("password"), "status": "default", "balance": 0.00, "bill_id": "", "chats": [],
-             "freeze_balance": [], "statistics": {"total": 0, "successful": 0, "arbitration": 0}, "reviews": []})
+             "freeze_balance": [], "statistics": {"total": 0, "successful": 0, "arbitration": 0}, "reviews": [], "deals":[]})
         await state.finish()
-        await personal_area(message, db)
+        await message.answer("Добро пожаловать на свободную биржу игровых ценностей. Фарми, зарабатывай, покупай", reply_markup=menu_kb)
+

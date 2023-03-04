@@ -9,8 +9,9 @@ from config import BOT_TOKEN, MONGO_API
 
 from start.preview import preview
 from start.registration import *
-
 from exchange.exchange import *
+from personal_area.reviews import reviews_process
+from personal_area.deals import deals_process
 
 
 
@@ -23,7 +24,6 @@ dp = Dispatcher(bot, storage=storage)
 
 ban_middleware = ban_user(db['users'])
 dp.middleware.setup(ban_middleware)
-
 
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
@@ -65,7 +65,15 @@ async def init_handler(call: types.CallbackQuery, state: FSMContext):
     await init_process(call, state)
     await state.finish() #Удалить перед модификацией
 
-
+@dp.message_handler()
+async def reviews_handler(message:types.Message):
+    match message.text:
+        case "Профиль":
+            await personal_area(message, db)
+        case "Отзывы":
+            await reviews_process(message, db)
+        case "Сделки":
+            await deals_process(message, db)
 
 
 
