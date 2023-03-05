@@ -1,7 +1,7 @@
 from aiogram.dispatcher import FSMContext
 from aiogram import types
 from aiogram.dispatcher.filters.state import State, StatesGroup
-
+from pymongo.database import Database
 from keyboards.license_agreement import license_agreement_kb
 from keyboards.menu import menu_kb
 from start.preview import preview
@@ -16,7 +16,7 @@ async def license_agreement(message:types.Message):
     await message.answer("Просим ознакомиться и принять принять лицензионное соглашение", reply_markup=license_agreement_kb)
 
 
-async def license_agreement_process(call: types.CallbackQuery, db):
+async def license_agreement_process(call: types.CallbackQuery, db:Database):
     match call.data:
         case "license_no":
             await call.answer("Для использования биржи требуется принять лицензионное соглашение")
@@ -27,7 +27,7 @@ async def license_agreement_process(call: types.CallbackQuery, db):
 
 
 async def password(message: types.Message, state: FSMContext):
-    if(len(message.text)) > 15:
+    if(len(message.text)) > 10:
         await message.answer("Поменьше")
         return
     await state.update_data(nickname=message.text)
@@ -36,7 +36,7 @@ async def password(message: types.Message, state: FSMContext):
         "Запомнил! Теперь давай определимся с паролем для защиты твоего баланса. Помни, он должен быть длиннее 6 символов:")
 
 
-async def password_process(message: types.Message, state: FSMContext, db):
+async def password_process(message: types.Message, state: FSMContext, db:Database):
     if len(message.text) < 6:
         await message.answer("Твой пароль должен состоять минимум из 6 символов")
     else:

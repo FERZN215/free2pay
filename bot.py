@@ -12,7 +12,8 @@ from start.registration import *
 from exchange.exchange import *
 from personal_area.reviews import reviews_process
 from personal_area.deals import deals_process
-
+from exchange.sell import sell_states, diamonds_cost, diamonds_set
+from exchange.buy import buy_states, diamonds_buy, offers_kb
 
 
 client = MongoClient(MONGO_API)
@@ -47,11 +48,22 @@ async def nickname_handler(message:types.Message, state:FSMContext):
 async def password_handler(message:types.Message, state:FSMContext):
     await password_process(message, state, db)
 
+@dp.message_handler()
+async def menu_handler(message:types.Message, state:FSMContext):
+    match message.text:
+        case "Профиль":
+            await personal_area(message, db)
+        case "Отзывы":
+            await reviews_process(message, db)
+        case "Сделки":
+            await deals_process(message, db)
+        case "Купить" | "Продать":
+            await exchange_process(message, state)
+    
+        
 
-@dp.callback_query_handler(lambda c: c.data == "buy" or c.data == "sell")
-async def exchange_handler(call: types.CallbackQuery, state: FSMContext):
-    await call.message.delete()
-    await exchange_process(call,state)
+
+
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith("game_"), state=exchange_states.game)
@@ -62,18 +74,38 @@ async def category_handler(call:types.CallbackQuery, state: FSMContext):
 @dp.callback_query_handler(lambda c: c.data.startswith("cat_"), state=exchange_states.game_type)
 async def init_handler(call: types.CallbackQuery, state: FSMContext):
     await call.message.delete()
-    await init_process(call, state)
-    await state.finish() #Удалить перед модификацией
+    await init_process(call, state, db)
 
-@dp.message_handler()
-async def reviews_handler(message:types.Message):
-    match message.text:
-        case "Профиль":
-            await personal_area(message, db)
-        case "Отзывы":
-            await reviews_process(message, db)
-        case "Сделки":
-            await deals_process(message, db)
+@dp.message_handler(state=sell_states.diamonds)
+async def diamonds_handler(message:types.Message, state:FSMContext):
+    await diamonds_cost(message, state)
+
+@dp.message_handler(state=sell_states.diamonds_cost)
+async def diamonds_cost_handler(message:types.Message, state:FSMContext):
+    await diamonds_set(message, state, db)
+
+
+@dp.callback_query_handler(lambda c: c.data.endswith("_offers"), state=buy_states.cur_list)
+async def offers_process(call:types.CallbackQuery, state:FSMContext):
+    data = await state.get_data()
+    match call.data.replace("_offers", ""):
+        case "forward":
+            _cur_list = data.get("cur_list") + 10
+        case "back":
+            _cur_list = data.get("cur_list") - 10
+        case "cancel":
+            await state.finish()
+            await call.message.delete()
+            return
+    
+    offers = []
+    for offer in db[data.get("game_type").replace("cat_", "")].find({"game":data.get("game")}).sort("cost_per_one"):
+        offers.append(offer)
+    
+    await state.update_data(cur_list = _cur_list)
+    await call.message.edit_reply_markup(offers_kb(offers, _cur_list))
+    
+    
 
 
 

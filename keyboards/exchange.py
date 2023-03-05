@@ -15,11 +15,10 @@ games_kb = InlineKeyboardMarkup().add(aion_classic, albion_online, lineage_2, li
 
 accounts = InlineKeyboardButton('Аккаунты', callback_data='cat_accounts')
 diamonds = InlineKeyboardButton('Алмазы', callback_data='cat_diamonds')
-coins = InlineKeyboardButton('Монеты', callback_data='cat_coins')
 services = InlineKeyboardButton('Услуги', callback_data='cat_services')
 
 
-category_kb = InlineKeyboardMarkup().add(accounts, diamonds).row(coins, services)
+category_kb = InlineKeyboardMarkup().add(accounts).add(diamonds).add(services)
 
 
 
