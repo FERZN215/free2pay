@@ -58,6 +58,7 @@ async def menu_handler(message:types.Message, state:FSMContext):
         case "Сделки":
             await deals_process(message, db)
         case "Купить" | "Продать":
+            await message.delete()
             await exchange_process(message, state)
     
         
@@ -91,15 +92,21 @@ async def offers_process(call:types.CallbackQuery, state:FSMContext):
     match call.data.replace("_offers", ""):
         case "forward":
             _cur_list = data.get("cur_list") + 10
+            _offers = db[data.get("game_type").replace("cat_", "")].find({"game":data.get("game")}).sort("cost_per_one").skip(data.get("cur_list")).limit(11)
         case "back":
             _cur_list = data.get("cur_list") - 10
+            if _cur_list == 10:
+                _offers = db[data.get("game_type").replace("cat_", "")].find({"game":data.get("game")}).sort("cost_per_one").limit(11)
+            else:
+                _offers = db[data.get("game_type").replace("cat_", "")].find({"game":data.get("game")}).sort("cost_per_one").skip(_cur_list-10).limit(11)
         case "cancel":
             await state.finish()
             await call.message.delete()
             return
     
     offers = []
-    for offer in db[data.get("game_type").replace("cat_", "")].find({"game":data.get("game")}).sort("cost_per_one"):
+    for offer in _offers:
+        print(offer)
         offers.append(offer)
     
     await state.update_data(cur_list = _cur_list)

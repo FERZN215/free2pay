@@ -24,6 +24,7 @@ async def category_process(call: types.CallbackQuery, state: FSMContext):
     await call.message.answer('Выбери подкатегорию', reply_markup=category_kb)
 
 
+
 async def init_process(call: types.CallbackQuery, state: FSMContext, db:Database):
     await state.update_data(game_type=call.data)
     data = await state.get_data()
