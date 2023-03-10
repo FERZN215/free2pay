@@ -33,5 +33,4 @@ async def init_process(call: types.CallbackQuery, state: FSMContext, db:Database
         case "Купить":
             await buy_init_process(call, state, db)
         case "Продать":
-            print(data)
             await sell_init_process(call, state)
