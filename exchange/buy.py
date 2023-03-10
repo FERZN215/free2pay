@@ -23,7 +23,6 @@ async def diamonds_buy(call:types.CallbackQuery, state:FSMContext, db:Database, 
     offers = []
 
     for offer in db["diamonds"].find({"game":data.get("game")}).sort("cost_per_one").limit(11):
-        print(offer)
         offers.append(offer)
      
     await buy_states.cur_list.set()

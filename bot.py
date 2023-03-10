@@ -3,10 +3,12 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram import types
 from pymongo import MongoClient
-
+import threading
 from middleware.ban import ban_user
 from config import BOT_TOKEN, MONGO_API
-
+from flask import Flask, request
+import asyncio
+from multiprocessing import Process
 from start.preview import preview
 from start.registration import *
 from exchange.exchange import *
@@ -22,6 +24,9 @@ db = client["test_db"]
 bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
+
+app = Flask(__name__)
+
 
 ban_middleware = ban_user(db['users'])
 dp.middleware.setup(ban_middleware)
@@ -111,10 +116,31 @@ async def offers_process(call:types.CallbackQuery, state:FSMContext):
     
     await state.update_data(cur_list = _cur_list)
     await call.message.edit_reply_markup(offers_kb(offers, _cur_list))
-    
-    
 
+@app.route('/send-message', methods=['GET'])
+def handler():
+   # получаем текст сообщения из запроса
+    async def send_message():
+        await bot.send_message(chat_id=1030297121, text="smth")
+        
+    asyncio.run(send_message())
+    
+    return 'Сообщение отправлено!'
 
+def main():
+    executor.start_polling(dp, skip_updates=True)
+    pass
+
+def start_server():
+    app.run()
+    pass
 
 if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
+    flask_process = Process(target=start_server)
+    flask_process.start()
+    # Запускаем процесс с AIogram ботом
+    bot_process = Process(target=main)
+    bot_process.start()
+
+    flask_process.join()
+    bot_process.join()
