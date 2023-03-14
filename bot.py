@@ -1,9 +1,14 @@
+from multiprocessing import Process
 from aiogram import Bot, Dispatcher, executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.webhook import *
 from aiogram import types
 from pymongo import MongoClient
-
+from flask import Flask
+from flask_sslify import SSLify
+import cherrypy
+from aiohttp import web
 from middleware.ban import ban_user
 from config import BOT_TOKEN, MONGO_API
 
@@ -12,8 +17,8 @@ from start.registration import *
 from exchange.exchange import *
 from personal_area.reviews import reviews_process
 from personal_area.deals import deals_process
-from exchange.sell import sell_states, diamonds_cost, diamonds_set
-from exchange.buy import buy_states, diamonds_buy, offers_kb
+from exchange.sell import sell_states, diamonds_cost, diamonds_set, diamonds_under_server, diamonds_count, commission, diamonds_db_set, redact_diamonds
+from exchange.buy import buy_states, offers_kb
 
 
 client = MongoClient(MONGO_API)
@@ -77,13 +82,44 @@ async def init_handler(call: types.CallbackQuery, state: FSMContext):
     await call.message.delete()
     await init_process(call, state, db)
 
+
+
+@dp.callback_query_handler(lambda c: c.data.startswith("l2m_server_"), state=sell_states.server)
+async def l2m_server_handler(call: types.CallbackQuery, state:FSMContext):
+    await call.message.delete()
+    await diamonds_under_server(call, state)
+
+
+@dp.callback_query_handler(lambda c: c.data.startswith("l2m_under_"), state=sell_states.under_server)
+async def l2m_server_handler(call: types.CallbackQuery, state:FSMContext):
+    await call.message.delete()
+    await diamonds_count(call, state)
+
+
+
 @dp.message_handler(state=sell_states.diamonds)
 async def diamonds_handler(message:types.Message, state:FSMContext):
     await diamonds_cost(message, state)
 
 @dp.message_handler(state=sell_states.diamonds_cost)
-async def diamonds_cost_handler(message:types.Message, state:FSMContext):
-    await diamonds_set(message, state, db)
+async def commission_handler(message:types.Message, state:FSMContext):
+    await commission(message, state)
+
+
+@dp.callback_query_handler(lambda c: c.data.startswith("comission_"), state=sell_states.comission)
+async def diamonds_cost_handler(call:types.CallbackQuery, state:FSMContext):
+    await call.message.delete()
+    await diamonds_set(call, state, db)
+
+
+@dp.callback_query_handler(lambda c: c.data.startswith("sell_"), state=sell_states.comission)
+async def diamonds_cost_handler(call:types.CallbackQuery, state:FSMContext):
+    await call.message.delete()
+    match call.data.replace("sell_", ""):
+        case "post":
+            await diamonds_db_set(call, state, db)
+        case "redact":
+            await redact_diamonds(call, state)
 
 
 @dp.callback_query_handler(lambda c: c.data.endswith("_offers"), state=buy_states.cur_list)
@@ -112,7 +148,5 @@ async def offers_process(call:types.CallbackQuery, state:FSMContext):
     await call.message.edit_reply_markup(offers_kb(offers, _cur_list))
 
 
-
-
 if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
+    executor.start_polling(dispatcher=dp, skip_updates=True)
