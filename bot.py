@@ -14,11 +14,12 @@ from config import BOT_TOKEN, MONGO_API
 
 from start.preview import preview
 from start.registration import *
-from exchange.exchange import *
+from exchange_f.exchange import *
 from personal_area.reviews import reviews_process
 from personal_area.deals import deals_process
-from exchange.sell import sell_states, diamonds_cost, diamonds_set, diamonds_under_server, diamonds_count, commission, diamonds_db_set, redact_diamonds
-from exchange.buy import buy_states, offers_kb
+from exchange_f.sell_f.wallet.diamonds import *
+from exchange_f.sell_f.services import *
+from exchange_f.buy import buy_states, offers_kb
 
 
 client = MongoClient(MONGO_API)
@@ -66,11 +67,6 @@ async def menu_handler(message:types.Message, state:FSMContext):
             await message.delete()
             await exchange_process(message, state)
     
-        
-
-
-
-
 
 @dp.callback_query_handler(lambda c: c.data.startswith("game_"), state=exchange_states.game)
 async def category_handler(call:types.CallbackQuery, state: FSMContext):
@@ -78,48 +74,86 @@ async def category_handler(call:types.CallbackQuery, state: FSMContext):
     await category_process(call, state)
 
 @dp.callback_query_handler(lambda c: c.data.startswith("cat_"), state=exchange_states.game_type)
-async def init_handler(call: types.CallbackQuery, state: FSMContext):
+async def server_handler(call: types.CallbackQuery, state: FSMContext):
     await call.message.delete()
-    await init_process(call, state, db)
+    await server_process(call, state)
 
-
-
-@dp.callback_query_handler(lambda c: c.data.startswith("l2m_server_"), state=sell_states.server)
-async def l2m_server_handler(call: types.CallbackQuery, state:FSMContext):
+@dp.callback_query_handler(lambda c: c.data.startswith("server_"), state=exchange_states.server)
+async def next_server_handler(call: types.CallbackQuery, state: FSMContext):
     await call.message.delete()
-    await diamonds_under_server(call, state)
+    await next_server_process(call, state, db)
 
-
-@dp.callback_query_handler(lambda c: c.data.startswith("l2m_under_"), state=sell_states.under_server)
-async def l2m_server_handler(call: types.CallbackQuery, state:FSMContext):
+@dp.callback_query_handler(lambda c: c.data.startswith("under_s_"), state=exchange_states.under_server)
+async def under_server_handler(call: types.CallbackQuery, state: FSMContext):
     await call.message.delete()
-    await diamonds_count(call, state)
+    await under_server_process(call, state, db)
 
 
 
-@dp.message_handler(state=sell_states.diamonds)
+
+@dp.message_handler(state=diamods_states.diamonds)
 async def diamonds_handler(message:types.Message, state:FSMContext):
     await diamonds_cost(message, state)
 
-@dp.message_handler(state=sell_states.diamonds_cost)
+@dp.message_handler(state=diamods_states.diamonds_cost)
 async def commission_handler(message:types.Message, state:FSMContext):
     await commission(message, state)
 
-
-@dp.callback_query_handler(lambda c: c.data.startswith("comission_"), state=sell_states.comission)
+@dp.callback_query_handler(lambda c: c.data.startswith("comission_"), state=diamods_states.comission)
 async def diamonds_cost_handler(call:types.CallbackQuery, state:FSMContext):
     await call.message.delete()
     await diamonds_set(call, state, db)
 
-
-@dp.callback_query_handler(lambda c: c.data.startswith("sell_"), state=sell_states.comission)
+@dp.callback_query_handler(lambda c: c.data.startswith("sell_"), state=diamods_states.comission)
 async def diamonds_cost_handler(call:types.CallbackQuery, state:FSMContext):
     await call.message.delete()
     match call.data.replace("sell_", ""):
         case "post":
             await diamonds_db_set(call, state, db)
         case "redact":
-            await redact_diamonds(call, state)
+            await server_process(call, state, True)
+
+
+
+
+@dp.message_handler(state=services_sell_states.name)
+async def services_name_handler(message:types.Message, state:FSMContext):
+    await services_cost(message, state)
+
+@dp.message_handler(state=services_sell_states.cost)
+async def services_cost_handler(message:types.Message, state:FSMContext):
+    await services_description(message, state)
+
+@dp.message_handler(state=services_sell_states.description)
+async def services_description_handler(message:types.Message, state:FSMContext):
+    await services_set(message, state, db)
+
+@dp.callback_query_handler(lambda c: c.data.startswith("sell_"), state=services_sell_states.description)
+async def services_set_handler(call:types.CallbackQuery, state:FSMContext):
+    await call.message.delete()
+    match call.data.replace("sell_", ""):
+        case "post":
+            await services_db_set(call, state, db)
+        case "redact":
+            await server_process(call, state, True)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 @dp.callback_query_handler(lambda c: c.data.endswith("_offers"), state=buy_states.cur_list)
