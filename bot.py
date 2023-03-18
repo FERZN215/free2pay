@@ -13,7 +13,8 @@ from exchange_f.exchange import *
 from personal_area.reviews import reviews_process
 from personal_area.deals import deals_process
 from exchange_f.buy import buy_states, offers_kb
-
+from balance.b_add import *
+from balance.b_out import *
 
 from handlers.sell.services_handlers import services_sell_handlers
 from handlers.sell.diamonds_handler import diamonds_sell_handlers
@@ -62,9 +63,20 @@ async def menu_handler(message:types.Message, state:FSMContext):
         case "Сделки":
             await deals_process(message, db)
         case "Купить" | "Продать":
-            await message.delete()
             await exchange_process(message, state)
+        case "Пополнить":
+            await balance_add_summ(message, state)
+        case "Вывести":
+            await balance_out_sum(message, state)
     
+@dp.message_handler(state= balance_out_states.sum_out)
+async def balance_out_process_handler(message:types.Message, state:FSMContext):
+    await balance_out_process(message, state, db)
+
+
+@dp.message_handler(state= balance_add_states.sum)
+async def balance_process(message:types.Message, state:FSMContext):
+    await balance_add(message, state, db)
 
 @dp.callback_query_handler(lambda c: c.data.startswith("game_"), state=exchange_states.game)
 async def category_handler(call:types.CallbackQuery, state: FSMContext):
