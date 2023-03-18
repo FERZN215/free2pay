@@ -1,14 +1,9 @@
-from multiprocessing import Process
 from aiogram import Bot, Dispatcher, executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.webhook import *
 from aiogram import types
 from pymongo import MongoClient
-from flask import Flask
-from flask_sslify import SSLify
-import cherrypy
-from aiohttp import web
 from middleware.ban import ban_user
 from config import BOT_TOKEN, MONGO_API
 
@@ -17,10 +12,13 @@ from start.registration import *
 from exchange_f.exchange import *
 from personal_area.reviews import reviews_process
 from personal_area.deals import deals_process
-from exchange_f.sell_f.wallet.diamonds import *
-from exchange_f.sell_f.services import *
 from exchange_f.buy import buy_states, offers_kb
 
+
+from handlers.sell.services_handlers import services_sell_handlers
+from handlers.sell.diamonds_handler import diamonds_sell_handlers
+from handlers.sell.accounts_handler import accounts_sell_handlers
+from handlers.sell.things_handler import things_sell_handlers
 
 client = MongoClient(MONGO_API)
 db = client["test_db"]
@@ -88,72 +86,17 @@ async def under_server_handler(call: types.CallbackQuery, state: FSMContext):
     await call.message.delete()
     await under_server_process(call, state, db)
 
+#--------------------------------------------------------------------------------------------------------------------------
 
 
 
-@dp.message_handler(state=diamods_states.diamonds)
-async def diamonds_handler(message:types.Message, state:FSMContext):
-    await diamonds_cost(message, state)
-
-@dp.message_handler(state=diamods_states.diamonds_cost)
-async def commission_handler(message:types.Message, state:FSMContext):
-    await commission(message, state)
-
-@dp.callback_query_handler(lambda c: c.data.startswith("comission_"), state=diamods_states.comission)
-async def diamonds_cost_handler(call:types.CallbackQuery, state:FSMContext):
-    await call.message.delete()
-    await diamonds_set(call, state, db)
-
-@dp.callback_query_handler(lambda c: c.data.startswith("sell_"), state=diamods_states.comission)
-async def diamonds_cost_handler(call:types.CallbackQuery, state:FSMContext):
-    await call.message.delete()
-    match call.data.replace("sell_", ""):
-        case "post":
-            await diamonds_db_set(call, state, db)
-        case "redact":
-            await server_process(call, state, True)
+services_sell_handlers(dp, db)
+diamonds_sell_handlers(dp, db)
+accounts_sell_handlers(dp, db)
+things_sell_handlers(dp, db)
 
 
-
-
-@dp.message_handler(state=services_sell_states.name)
-async def services_name_handler(message:types.Message, state:FSMContext):
-    await services_cost(message, state)
-
-@dp.message_handler(state=services_sell_states.cost)
-async def services_cost_handler(message:types.Message, state:FSMContext):
-    await services_description(message, state)
-
-@dp.message_handler(state=services_sell_states.description)
-async def services_description_handler(message:types.Message, state:FSMContext):
-    await services_set(message, state, db)
-
-@dp.callback_query_handler(lambda c: c.data.startswith("sell_"), state=services_sell_states.description)
-async def services_set_handler(call:types.CallbackQuery, state:FSMContext):
-    await call.message.delete()
-    match call.data.replace("sell_", ""):
-        case "post":
-            await services_db_set(call, state, db)
-        case "redact":
-            await server_process(call, state, True)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#--------------------------------------------------------------------------------------------------------------------------
 
 
 @dp.callback_query_handler(lambda c: c.data.endswith("_offers"), state=buy_states.cur_list)

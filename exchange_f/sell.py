@@ -6,6 +6,8 @@ from aiogram import types
 
 from .sell_f.wallet.diamonds import diamonds_count
 from .sell_f.services import services_name
+from .sell_f.accounts import account_type
+from .sell_f.things import thing_type
 
 
 
@@ -21,8 +23,10 @@ async def sell_init_process(call:types.CallbackQuery, state:FSMContext):
         case "cat_services":
             await services_name(call, state)
         case "cat_accounts":
-            await accounts_sell(call, state)
-
+            await account_type(call, state)
+        case "cat_things":
+            await thing_type(call, state)
+            
         case "cat_adena":
             await diamonds_count(call, state)
         case "cat_chaos":
@@ -53,8 +57,6 @@ async def sell_init_process(call:types.CallbackQuery, state:FSMContext):
             await services_sell(call, state)
         case "cat_sbor":
             await accounts_sell(call, state)
-        case "cat_things":
-            await diamonds_count(call, state)
         case "cat_timecards":
             await services_sell(call, state)
         case "cat_wow_pve":

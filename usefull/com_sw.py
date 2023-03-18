@@ -1,2 +1,2 @@
 def com_sw(commission:str):
-    return "+" if commission.replace("commission_", "") == "yes" else "-"
+    return "+" if commission.replace("comission_", "") == "yes" else "-"

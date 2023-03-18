@@ -23,7 +23,6 @@ class diamods_states(StatesGroup):
 
 
 async def diamonds_count(call:types.CallbackQuery, state:FSMContext):
-    await state.update_data(under_server = call.data)
     await diamods_states.diamonds.set()
     await call.message.answer("Сколько алмазов ты хочешь продать?")
 
@@ -45,11 +44,11 @@ async def commission(message:types.Message, state:FSMContext):
     await message.answer("оплачивает ли вы внутриигровую  комиссию?", reply_markup=comission_kb)
 
 
-async def diamonds_set(call:types.CallbackQuery, state:FSMContext, db:Database):
+async def diamonds_set(call:types.CallbackQuery, state:FSMContext):
     await state.update_data(comission=call.data)
     data = await state.get_data()
-    cur_seller = db["users"].find_one({"telegram_id":call.message.chat.id})
-    await call.message.answer("Продавец: " + str(cur_seller["local_name"]) + "\nКоличество алмазов: " +str(data.get("diamonds")) + "\nЦена за единицу: " +str(data.get("diamonds_cost")) +"\nКоммиссия:" + str(com_sw(data.get("comission"))) + "\nРейтинг: 96%", reply_markup=sell_conf_kb)
+    
+    await call.message.answer("Количество алмазов: " +str(data.get("diamonds")) + "\nЦена за единицу: " +str(data.get("diamonds_cost")) +"\nКоммиссия:" + str(com_sw(data.get("comission"))), reply_markup=sell_conf_kb)
 
 
 async def diamonds_db_set(call:types.CallbackQuery, state:FSMContext,  db:Database ):

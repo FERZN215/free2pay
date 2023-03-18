@@ -7,14 +7,13 @@ from keyboards.menu import menu_kb
 
 from usefull.is_digit import is_digit
 
-class services_sell_states(StatesGroup):
+class services_states(StatesGroup):
     name = State()
     cost = State()
     description = State()
 
 async def services_name(call: types.CallbackQuery, state: FSMContext):
-    await state.update_data(under_server=call.data)
-    await services_sell_states.name.set()
+    await services_states.name.set()
     await call.message.answer("Напиши название услуги")
 
 
@@ -23,7 +22,7 @@ async def services_cost(message: types.Message, state: FSMContext):
         await message.answer('Слишком большое название, попробуй еще раз:')
         return
     await state.update_data(name=message.text)
-    await services_sell_states.cost.set()
+    await services_states.cost.set()
     await message.answer("Укажи цену услуги:")  
 
 
@@ -31,20 +30,20 @@ async def services_description(message: types.Message, state: FSMContext):
     if is_digit(message.text) == False:
         await message.answer("Цена должна быть числом, попробуй еще раз:")
         return
-    await state.update_data(cost=float(message.text))
-    await services_sell_states.description.set()
+    await state.update_data(cost=float(message.text.replace(',', '.')))
+    await services_states.description.set()
     await message.answer("Запомнил, теперь введи описание услуги")
 
 
-async def services_set(message: types.Message, state: FSMContext, db: Database):
+async def services_set(message: types.Message, state: FSMContext):
     if len(message.text) > 200:
         await message.answer('Слишком большое описание, попробуй еще раз:')
         return
     await state.update_data(description=message.text)
     data = await state.get_data()
-    cur_seller = db["users"].find_one({"telegram_id": message.chat.id})
-    await message.answer("Продавец: " + str(cur_seller["local_name"]) + "\nНазвание: " +
-        data.get("name") + "\nЦена " + str(data.get("cost")) + "\nОписание: "+str(data.get("description"))+"\nРейтинг: 96%", reply_markup=sell_conf_kb)
+   
+    await message.answer("Название: " +
+        data.get("name") + "\nЦена " + str(data.get("cost")) + "\nОписание: "+str(data.get("description")), reply_markup=sell_conf_kb)
 
 
 
