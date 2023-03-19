@@ -12,14 +12,22 @@ from start.registration import *
 from exchange_f.exchange import *
 from personal_area.reviews import reviews_process
 from personal_area.deals import deals_process
-from exchange_f.buy import buy_states, offers_kb
 from balance.b_add import *
 from balance.b_out import *
 
-from handlers.sell.services_handlers import services_sell_handlers
-from handlers.sell.diamonds_handler import diamonds_sell_handlers
-from handlers.sell.accounts_handler import accounts_sell_handlers
-from handlers.sell.things_handler import things_sell_handlers
+
+from games.l2m.sell.handlers.services_handlers import services_sell_handlers
+from games.l2m.sell.handlers.diamonds_handler import diamonds_sell_handlers
+from games.l2m.sell.handlers.accounts_handler import accounts_sell_handlers
+from games.l2m.sell.handlers.things_handler import things_sell_handlers
+
+
+
+from games.l2m.buy.handlers.diamonds_buy_handler import diamonds_buy_handlers
+from games.l2m.buy.handlers.accounts_buy_handler import accounts_buy_handler
+from games.l2m.buy.handlers.services_buy_handler import services_buy_handler
+from games.l2m.buy.handlers.things_buy_handler import things_buy_handler
+
 
 client = MongoClient(MONGO_API)
 db = client["test_db"]
@@ -111,30 +119,20 @@ things_sell_handlers(dp, db)
 #--------------------------------------------------------------------------------------------------------------------------
 
 
-@dp.callback_query_handler(lambda c: c.data.endswith("_offers"), state=buy_states.cur_list)
-async def offers_process(call:types.CallbackQuery, state:FSMContext):
-    data = await state.get_data()
-    match call.data.replace("_offers", ""):
-        case "forward":
-            _cur_list = data.get("cur_list") + 10
-            _offers = db[data.get("game_type").replace("cat_", "")].find({"game":data.get("game")}).sort("cost_per_one").skip(data.get("cur_list")).limit(11)
-        case "back":
-            _cur_list = data.get("cur_list") - 10
-            if _cur_list == 10:
-                _offers = db[data.get("game_type").replace("cat_", "")].find({"game":data.get("game")}).sort("cost_per_one").limit(11)
-            else:
-                _offers = db[data.get("game_type").replace("cat_", "")].find({"game":data.get("game")}).sort("cost_per_one").skip(_cur_list-10).limit(11)
-        case "cancel":
-            await state.finish()
-            await call.message.delete()
-            return
-    
-    offers = []
-    for offer in _offers:
-        offers.append(offer)
-    
-    await state.update_data(cur_list = _cur_list)
-    await call.message.edit_reply_markup(offers_kb(offers, _cur_list))
+diamonds_buy_handlers(dp, db)
+accounts_buy_handler(dp, db)
+services_buy_handler(dp, db)
+things_buy_handler(dp, db)
+
+
+#--------------------------------------------------------------------------------------------------------------------------
+# back_from_one
+
+            
+
+
+
+
 
 
 if __name__ == '__main__':

@@ -7,9 +7,10 @@ from .buy import buy_init_process
 from .sell import sell_init_process
 
 
-from keyboards.l2m.l2m_servers import l2m_servers
-from keyboards.l2m.l2m_under_servers import l2m_under_servers
-from keyboards.l2m.l2m_category import l2m_category_kb
+
+from games.l2m.keyboards.l2m_servers import l2m_servers
+from games.l2m.keyboards.l2m_under_servers import l2m_under_servers
+from games.l2m.keyboards.l2m_category import l2m_category_kb
 
 class exchange_states(StatesGroup):
     type = State()
@@ -28,7 +29,7 @@ async def exchange_process(message:types.Message, state:FSMContext):
 async def category_process(call: types.CallbackQuery, state: FSMContext):
     await state.update_data(game=call.data)
     await exchange_states.game_type.set()
-    #МЕГА ТРАБЛ, НУЖНО РАСПИСАТЬ КАЖДУЮ ИГРУ ДЛЯ ВЫВОДА ПОДКАТЕГОРИИ
+
     data = await state.get_data()
     match data.get('game'):
         case "game_lage2m":
