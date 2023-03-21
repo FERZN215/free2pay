@@ -7,6 +7,7 @@ from ..keyboards.offers.accounts_offer import offers_kb
 from ..keyboards.seller_kb import seller_kb
 from ..keyboards.buyer_kb import buyer_kb
 from keyboards.menu import menu_kb
+from keyboards.review_keyboard import reviews_kb, back_kb
 
 from usefull.acc_type_to_text import ac_t_t
 
@@ -14,6 +15,7 @@ class accounts_list(StatesGroup):
     cur_list = State()
     sort = State()
     id = State()
+    review_list = State()
 
 async def accounts_out(call:types.CallbackQuery, state:FSMContext, db:Database):
     data = await state.get_data()
@@ -73,8 +75,12 @@ async def account_kb_pr(call:types.CallbackQuery, state:FSMContext, db:Database)
     await call.message.edit_reply_markup(offers_kb(offers, _cur_list, db, sort_by))
 
 
-async def one_account_offer(call:types.CallbackQuery, state:FSMContext, db:Database):
-    cur_id = ObjectId(call.data.replace("acc_offer_id:", ""))
+async def one_account_offer(call:types.CallbackQuery, state:FSMContext, db:Database, rev = False):
+    if not rev:
+        cur_id = ObjectId(call.data.replace("acc_offer_id:", ""))
+    else:
+        data = await state.get_data()
+        cur_id = data.get("id")
     await accounts_list.id.set()
     await state.update_data(id = cur_id)
     product = db["l2m"].find_one({"_id":cur_id})
@@ -92,3 +98,35 @@ async def one_account_offer(call:types.CallbackQuery, state:FSMContext, db:Datab
         reply_markup= reply_kb
         
     )
+
+async def view_reviews(call:types.CallbackQuery, state:FSMContext, db:Database):
+    data = await state.get_data()
+    user = db["users"].find_one({"telegram_id": (db["l2m"].find_one({"_id": data.get("id")}))["seller"]})
+    await accounts_list.review_list.set()
+    await state.update_data(review_list = 10)
+    await call.message.answer("Вот все отзывы данного продавца: ", reply_markup=reviews_kb(user["reviews"][:11], 10))   
+
+async def review_kb_process(call:types.CallbackQuery, state:FSMContext, db:Database):
+    data = await state.get_data()
+    user = db["users"].find_one({"telegram_id": (db["l2m"].find_one({"_id": data.get("id")}))["seller"]})
+    match call.data.replace("_reviews", ""):
+        case "forward":
+            _cur_list = data.get("review_list") + 10
+            _reviews = user["reviews"][data.get("review_list"): _cur_list+1]
+            
+        case "back":
+            _cur_list = data.get("review_list") - 10
+
+            _reviews = user["reviews"][data.get("review_list")-10: data.get("review_list")+1]
+        case "cancel":
+            await call.message.delete()
+            await one_account_offer(call, state, db, True)
+            return
+    await call.message.edit_reply_markup(reviews_kb(_reviews, _cur_list))
+
+async def view_one_review(call:types.CallbackQuery, state:FSMContext, db:Database):
+    data = await state.get_data()
+    user = db["users"].find_one({"telegram_id": (db["l2m"].find_one({"_id": data.get("id")}))["seller"]})
+    await call.message.answer("Автор: "+ str(user["reviews"][int(call.data.replace("review_id:", ""))]["name"]) + 
+                              "\nОценка: " + str(user["reviews"][int(call.data.replace("review_id:", ""))]["rating"]) + 
+                              "\nТекст: "+ str(user["reviews"][int(call.data.replace("review_id:", ""))]["description"]), reply_markup=back_kb)

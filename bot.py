@@ -37,6 +37,7 @@ bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
+
 ban_middleware = ban_user(db['users'])
 dp.middleware.setup(ban_middleware)
 
