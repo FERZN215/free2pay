@@ -6,7 +6,7 @@ from bson.objectid import ObjectId
 from ..keyboards.offers.accounts_offer import offers_kb
 from ..keyboards.seller_kb import seller_kb
 from ..keyboards.buyer_kb import buyer_kb
-
+from keyboards.menu import menu_kb
 
 from usefull.acc_type_to_text import ac_t_t
 
@@ -21,12 +21,16 @@ async def accounts_out(call:types.CallbackQuery, state:FSMContext, db:Database):
     for offer in db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server")}).sort("cost").limit(11):
         offers.append(offer)
 
+
     await accounts_list.cur_list.set()
     await state.update_data(cur_list = 10)
     await state.update_data(sort = "cost")
 
-    await call.message.answer("Вот все наши предложения: ",reply_markup=offers_kb(offers, 10, db))
-
+    if len(offers) > 0:
+        await call.message.answer("Вот все наши предложения: ",reply_markup=offers_kb(offers, 10, db))
+    else:
+        await state.finish()
+        await call.message.answer("В данном разделе отсутсвуют товары", reply_markup=menu_kb)
 
 
 async def account_kb_pr(call:types.CallbackQuery, state:FSMContext, db:Database):
@@ -71,6 +75,7 @@ async def account_kb_pr(call:types.CallbackQuery, state:FSMContext, db:Database)
 
 async def one_account_offer(call:types.CallbackQuery, state:FSMContext, db:Database):
     cur_id = ObjectId(call.data.replace("acc_offer_id:", ""))
+    await accounts_list.id.set()
     await state.update_data(id = cur_id)
     product = db["l2m"].find_one({"_id":cur_id})
     seller = db["users"].find_one({"telegram_id":product["seller"]})

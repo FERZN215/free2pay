@@ -6,7 +6,7 @@ from bson.objectid import ObjectId
 from ..keyboards.offers.services_offer import offers_kb
 from ..keyboards.seller_kb import seller_kb
 from ..keyboards.buyer_kb import buyer_kb
-
+from keyboards.menu import menu_kb
 
 
 class services_list(StatesGroup):
@@ -23,7 +23,12 @@ async def services_out(call:types.CallbackQuery, state:FSMContext, db:Database):
     await state.update_data(cur_list = 10)
    
 
-    await call.message.answer("Вот все наши предложения: ",reply_markup=offers_kb(offers, 10, db))
+    if len(offers) > 0:
+        await call.message.answer("Вот все наши предложения: ",reply_markup=offers_kb(offers, 10, db))
+    else:
+        await state.finish()
+        await call.message.answer("В данном разделе отсутсвуют товары", reply_markup=menu_kb)
+
 
 
 
@@ -56,6 +61,7 @@ async def services_kb_pr(call:types.CallbackQuery, state:FSMContext, db:Database
 
 async def one_service_offer(call:types.CallbackQuery, state:FSMContext, db:Database):
     cur_id = ObjectId(call.data.replace("ser_offer_id:", ""))
+    await services_list.id.set()
     await state.update_data(id = cur_id)
     product = db["l2m"].find_one({"_id":cur_id})
     seller = db["users"].find_one({"telegram_id":product["seller"]})

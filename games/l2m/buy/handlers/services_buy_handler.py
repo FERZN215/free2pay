@@ -6,7 +6,7 @@ from functools import partial
 
 
 from ..services import *
-
+from ..buy import buy_process
 
 async def services_kb_handler(call:types.CallbackQuery, state:FSMContext, db:Database):
     await services_kb_pr(call, state, db)
@@ -20,10 +20,19 @@ async def back_buttons_handler(call:types.CallbackQuery, state:FSMContext, db:Da
     await state.update_data(id = None)
     await services_out(call, state, db)
 
+async def buy_porcess_start_handler(call:types.CallbackQuery, state:FSMContext, db:Database):
+    await call.message.delete()
+    await buy_process(call, state, db)
+
+
+
 def services_buy_handler(dp:Dispatcher, dbc:Database):
     new_accounts_kb_handler = partial(services_kb_handler, db=dbc)
     new_account_by_one_handler = partial(services_by_one_handler, db=dbc)
     new_back_buttons_handler = partial(back_buttons_handler, db=dbc)
+    new_buy_porcess_start_handler = partial(buy_porcess_start_handler, db = dbc)
+
     dp.register_callback_query_handler(new_accounts_kb_handler, lambda c: c.data.endswith("_offers"), state=services_list.cur_list)
     dp.register_callback_query_handler(new_account_by_one_handler, lambda c: c.data.startswith("ser_offer_id:"), state=services_list.cur_list)
-    dp.register_callback_query_handler(new_back_buttons_handler, lambda c: c.data=="back_from_one", state=services_list.cur_list)
+    dp.register_callback_query_handler(new_buy_porcess_start_handler, lambda c: c.data == "buyer_buy", state=services_list.id)
+    dp.register_callback_query_handler(new_back_buttons_handler, lambda c: c.data=="back_from_one", state=services_list.id)

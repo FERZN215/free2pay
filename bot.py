@@ -27,6 +27,7 @@ from games.l2m.buy.handlers.diamonds_buy_handler import diamonds_buy_handlers
 from games.l2m.buy.handlers.accounts_buy_handler import accounts_buy_handler
 from games.l2m.buy.handlers.services_buy_handler import services_buy_handler
 from games.l2m.buy.handlers.things_buy_handler import things_buy_handler
+from games.l2m.buy.handlers.buy_handler import buy_handlers
 
 
 client = MongoClient(MONGO_API)
@@ -123,6 +124,7 @@ diamonds_buy_handlers(dp, db)
 accounts_buy_handler(dp, db)
 services_buy_handler(dp, db)
 things_buy_handler(dp, db)
+buy_handlers(dp, db)
 
 
 #--------------------------------------------------------------------------------------------------------------------------
