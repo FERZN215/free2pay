@@ -7,7 +7,7 @@ from functools import partial
 
 from ..accounts import *
 
-from ..buy import buy_process
+from ..buy import accounts_buy_process
 from reviews.reviews import view_reviews
 
 async def accounts_kb_handler(call:types.CallbackQuery, state:FSMContext, db:Database):
@@ -20,7 +20,7 @@ async def account_by_one_handler(call:types.CallbackQuery, state:FSMContext, db:
 
 async def buy_porcess_start_handler(call:types.CallbackQuery, state:FSMContext, db:Database):
     await call.message.delete()
-    await buy_process(call, state, db)
+    await accounts_buy_process(call, state, db)
 
 
 async def back_buttons_handler(call:types.CallbackQuery, state:FSMContext, db:Database):

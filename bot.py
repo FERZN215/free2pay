@@ -126,11 +126,11 @@ things_sell_handlers(dp, db)
 #--------------------------------------------------------------------------------------------------------------------------
 
 
-diamonds_buy_handlers(dp, db)
+diamonds_buy_handlers(dp, db, bot)
 accounts_buy_handler(dp, db)
 services_buy_handler(dp, db)
 things_buy_handler(dp, db)
-buy_handlers(dp, db)
+buy_handlers(dp, db, bot)
 reviews_handlers(dp, db)
 
 #--------------------------------------------------------------------------------------------------------------------------

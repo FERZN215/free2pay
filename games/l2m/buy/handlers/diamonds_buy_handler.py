@@ -36,9 +36,9 @@ async def delete_diamond_offer_handler(call:types.CallbackQuery, state:FSMContex
     await delete_diamond_offer(call, state, db)
 
 
-async def buy_porcess_start_handler(call:types.CallbackQuery, state:FSMContext, db:Database):
+async def buy_porcess_start_handler(call:types.CallbackQuery, state:FSMContext, db:Database, bot):
     await call.message.delete()
-    await diamond_buy_process(call, state, db)
+    await diamond_buy_process(call, state, db, bot)
 
 
 async def back_buttons_handler(call:types.CallbackQuery, state:FSMContext, db:Database):
@@ -47,14 +47,14 @@ async def back_buttons_handler(call:types.CallbackQuery, state:FSMContext, db:Da
     await diamonds_out(call, state, db)
 
 
-def diamonds_buy_handlers(dp: Dispatcher, dbc:Database):
+def diamonds_buy_handlers(dp: Dispatcher, dbc:Database, botc):
     new_diamonds_kb_handler = partial(diamonds_kb_handler, db=dbc)
     new_diamonds_buy_handlers = partial(diamonds_by_one_handler, db=dbc)
     new_count_process_handler = partial(count_process_handler, db=dbc)
     new_back_buttons_handler = partial(back_buttons_handler, db=dbc)
     new_change_diamond_count_process_handler = partial(change_diamond_count_process_handler, db=dbc)
     new_delete_diamond_offer_handler = partial(delete_diamond_offer_handler, db=dbc)
-    new_buy_porcess_start_handler = partial(buy_porcess_start_handler, db=dbc)
+    new_buy_porcess_start_handler = partial(buy_porcess_start_handler, db=dbc, bot=botc)
 
     new_view_reviews = partial(view_reviews, db=dbc)
 
