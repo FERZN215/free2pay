@@ -29,6 +29,11 @@ from games.l2m.buy.handlers.services_buy_handler import services_buy_handler
 from games.l2m.buy.handlers.things_buy_handler import things_buy_handler
 from games.l2m.buy.handlers.buy_handler import buy_handlers
 
+from reviews.reviews_handler import reviews_handlers
+
+
+# mas = [1,2,3,4,5,6,7,8,9,0,11,22,33,44,55,66,77,88,99,00]
+# print(mas[3:10])
 
 client = MongoClient(MONGO_API)
 db = client["test_db"]
@@ -126,7 +131,7 @@ accounts_buy_handler(dp, db)
 services_buy_handler(dp, db)
 things_buy_handler(dp, db)
 buy_handlers(dp, db)
-
+reviews_handlers(dp, db)
 
 #--------------------------------------------------------------------------------------------------------------------------
 # back_from_one

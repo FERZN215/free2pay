@@ -59,8 +59,14 @@ async def things_kb_pr(call:types.CallbackQuery, state:FSMContext, db:Database):
     await call.message.edit_reply_markup(offers_kb(offers, _cur_list, db))
 
 
-async def one_thing_offer(call:types.CallbackQuery, state:FSMContext, db:Database):
-    cur_id = ObjectId(call.data.replace("th_offer_id:", ""))
+async def one_thing_offer(call:types.CallbackQuery, state:FSMContext, db:Database, rev = False):
+    if not rev:
+        cur_id = ObjectId(call.data.replace("th_offer_id:", ""))
+    else:
+        data = await state.get_data()
+        cur_id = data.get("id")
+
+
     await things_list.id.set()
     await state.update_data(id = cur_id)
     product = db["l2m"].find_one({"_id":cur_id})

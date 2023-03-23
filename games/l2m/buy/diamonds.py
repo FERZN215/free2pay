@@ -86,6 +86,7 @@ async def one_diamond_offer(call=None, state=None, db=None, msg = None):
         data = await state.get_data()
         cur_id = data.get("id")
 
+    await diamonds_list.id.set()
     product = db["l2m"].find_one({"_id":cur_id})
     seller = db["users"].find_one({"telegram_id":product["seller"]})
 
