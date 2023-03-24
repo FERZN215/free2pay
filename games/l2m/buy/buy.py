@@ -9,6 +9,7 @@ from aiogram import Bot, Dispatcher
 from keyboards.buy_start import buy_start_kb, buyer_disagree_kb
 from keyboards.menu import menu_kb
 from ..keyboards.no_balance import no_balance_kb
+from ..keyboards.verification_kb import access_code
 from usefull.acc_type_to_text import ac_t_t
 
 from balance.b_add import balance_add_summ
@@ -152,10 +153,22 @@ async def accounts_get_password(message:types.Message, state:FSMContext, db:Data
         await state.set_state(data.get("prev_state"))
     except ...:
         print("no state")
-    await bot.send_message(offer["buyer"],"Логин: " + data.get("login") + "\nПароль: "+ message.text + "\nПосле успешного ввода данных, вы можете запросить код подтверждения. Если же данные не действительны, вы можете обратиться к продавцу через активные сделки, пожаловаться, либо открыть арбитраж")
+    db["active_deals"].update_one({"_id": offer["_id"]}, {"$set": {"login": data.get("login")}})
+    await bot.send_message(offer["buyer"],"Логин: " + data.get("login") + "\nПароль: "+ message.text + 
+                           "\nПосле успешного ввода данных, вы можете запросить код подтверждения. Если же данные не действительны, вы можете обратиться к продавцу через активные сделки, пожаловаться, либо открыть арбитраж", reply_markup=access_code(offer["_id"]))
 
+async def accounts_verification_code_awaiting(call:types.CallbackQuery, state:FSMContext, dp: Dispatcher, bot:Bot, db: Database):
+    offer = db["active_deals"].find_one({"_id": ObjectId(call.data.replace("buyer_code_query:", ""))})
+    await call.message.answer("Запрос отправлен продавцу")
+    await dp.storage.update_data(chat = offer["seller"], data={"prev_state": await dp.storage.get_state(chat=offer["seller"]), "buyer_code_id": offer["_id"]})
+    await dp.storage.set_state(chat = offer["seller"], state = buy_list.verification_code)
+    await bot.send_message(offer["seller"], "Покупатель запрашивает код от аккаунта \nЛогин:" +str(offer["login"])+"\nОтправьте код, иначе покупатель будет вынужден открыть арбитраж")
 
-
+async def accounts_verification_code_from_seller(message:types.Message, state:FSMContext, dp: Dispatcher, bot:Bot, db:Database):
+    data = await state.get_data()
+    offer = db["active_deals"].find_one({"_id": ObjectId(data.get("buyer_code_id"))})
+    await bot.send_message(offer["buyer"], "Продавец отправил код от аккаунта: "+str(offer["login"])+"\nПроверьте и подтвердите выполнение сделки:\n<b>"+ message.text+"</b>", parse_mode='HTML', reply_markup=access_code(offer["_id"]))
+    await state.set_state(data.get("prev_state"))
 
 async def buy_process(call:types.CallbackQuery, state:FSMContext, db:Database):
     # await buy_list.buy_start.set()
