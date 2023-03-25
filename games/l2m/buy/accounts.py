@@ -9,7 +9,7 @@ from ..keyboards.buyer_kb import buyer_kb
 from keyboards.menu import menu_kb
 
 
-from usefull.acc_type_to_text import ac_t_t
+from usefull.converters import ac_t_t
 
 class accounts_list(StatesGroup):
     cur_list = State()
@@ -20,7 +20,7 @@ class accounts_list(StatesGroup):
 async def accounts_out(call:types.CallbackQuery, state:FSMContext, db:Database):
     data = await state.get_data()
     offers = []
-    for offer in db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server")}).sort("cost").limit(11):
+    for offer in db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server"), "invis":False}).sort("cost").limit(11):
         offers.append(offer)
 
 
@@ -41,24 +41,24 @@ async def account_kb_pr(call:types.CallbackQuery, state:FSMContext, db:Database)
     match call.data.replace("_offers", ""):
         case "forward":
             _cur_list = data.get("cur_list") + 10
-            _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server")}).sort(sort_by).skip(data.get("cur_list")).limit(11)
+            _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server"), "invis":False}).sort(sort_by).skip(data.get("cur_list")).limit(11)
         case "back":
             _cur_list = data.get("cur_list") - 10
             if _cur_list == 10:
-                _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server")}).sort(sort_by).limit(11)
+                _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server"), "invis":False}).sort(sort_by).limit(11)
             else:
-                _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server")}).sort(sort_by).skip(_cur_list-10).limit(11)
+                _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server"), "invis":False}).sort(sort_by).skip(_cur_list-10).limit(11)
         
         case "cost":
             _cur_list = 10
             await state.update_data(sort = "cost")
             sort_by = "cost"
-            _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server")}).sort("cost").limit(11)
+            _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server"), "invis":False}).sort("cost").limit(11)
         case "level":
             _cur_list = 10
             await state.update_data(sort = "level")
             sort_by = "level"
-            _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server")}).sort("level").limit(11)
+            _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server"), "invis":False}).sort("level").limit(11)
 
         
         case "cancel":

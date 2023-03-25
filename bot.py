@@ -10,8 +10,10 @@ from config import BOT_TOKEN, MONGO_API
 from start.preview import preview
 from start.registration import *
 from exchange_f.exchange import *
-from personal_area.reviews import reviews_process
-from personal_area.deals import deals_process
+
+from personal_area.deals import deals_process, active_deals_list
+from personal_area.handlers.deals_handlers import active_deals_handlers
+
 from balance.b_add import *
 from balance.b_out import *
 
@@ -74,9 +76,9 @@ async def menu_handler(message:types.Message, state:FSMContext):
         case "Профиль":
             await personal_area(message, db)
         case "Отзывы":
-            await reviews_process(message, db)
-        case "Сделки":
-            await deals_process(message, db)
+            return# await reviews_process(message, db)
+        case "Активные сделки":
+            await deals_process(message,state, db)
         case "Купить" | "Продать":
             await exchange_process(message, state)
         case "Пополнить":
@@ -113,6 +115,12 @@ async def under_server_handler(call: types.CallbackQuery, state: FSMContext):
     await call.message.delete()
     await under_server_process(call, state, db)
 
+
+@dp.callback_query_handler(lambda c: c.data == "back_from_deals", state=active_deals_list.id)
+async def back_from_deals_handler(call:types.CallbackQuery, state:FSMContext):
+    await call.message.delete()
+    await deals_process(call.message, state, db)
+
 #--------------------------------------------------------------------------------------------------------------------------
 
 
@@ -127,11 +135,12 @@ things_sell_handlers(dp, db)
 
 
 diamonds_buy_handlers(dp, db, bot)
-accounts_buy_handler(dp, db)
+accounts_buy_handler(dp, db, bot)
 services_buy_handler(dp, db)
-things_buy_handler(dp, db)
+things_buy_handler(dp, db, bot)
 buy_handlers(dp, db, bot)
 reviews_handlers(dp, db)
+active_deals_handlers(dp, db, bot)
 
 #--------------------------------------------------------------------------------------------------------------------------
 # back_from_one

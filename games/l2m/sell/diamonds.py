@@ -56,6 +56,6 @@ async def diamonds_db_set(call:types.CallbackQuery, state:FSMContext,  db:Databa
 
     db["l2m"].insert_one(
     {"game": data.get("game"), "pr_type":data.get("game_type"), "server": data.get("server"), "under_server": data.get("under_server"),
-    "seller": call.message.chat.id, "name": data.get("diamonds"),"comission": data.get("comission"), "cost": data.get("diamonds_cost")})
+    "seller": call.message.chat.id, "name": data.get("diamonds"),"comission": data.get("comission"), "cost": data.get("diamonds_cost"), "invis":False})
     await state.finish()
     await call.message.answer("Твое предложения видно всем!", reply_markup=menu_kb)

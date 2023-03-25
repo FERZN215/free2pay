@@ -1,5 +1,5 @@
 from aiogram.types import  InlineKeyboardMarkup, InlineKeyboardButton
-from usefull.acc_type_to_text import ac_t_t
+from usefull.converters import ac_t_t
 def offers_kb(posts, n, db, sort="cost"):
     offers_kb = InlineKeyboardMarkup()
     for i in range(len(posts)):

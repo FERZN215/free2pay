@@ -16,7 +16,7 @@ class services_list(StatesGroup):
 async def services_out(call:types.CallbackQuery, state:FSMContext, db:Database):
     data = await state.get_data()
     offers = []
-    for offer in db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server")}).sort("cost").limit(11):
+    for offer in db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server"), "invis":False}).sort("cost").limit(11):
         offers.append(offer)
 
     await services_list.cur_list.set()
@@ -37,13 +37,13 @@ async def services_kb_pr(call:types.CallbackQuery, state:FSMContext, db:Database
     match call.data.replace("_offers", ""):
         case "forward":
             _cur_list = data.get("cur_list") + 10
-            _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server")}).sort("cost").skip(data.get("cur_list")).limit(11)
+            _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server"), "invis":False}).sort("cost").skip(data.get("cur_list")).limit(11)
         case "back":
             _cur_list = data.get("cur_list") - 10
             if _cur_list == 10:
-                _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server")}).sort("cost").limit(11)
+                _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server"), "invis":False}).sort("cost").limit(11)
             else:
-                _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server")}).sort("cost").skip(_cur_list-10).limit(11)
+                _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server"), "invis":False}).sort("cost").skip(_cur_list-10).limit(11)
 
         case "cancel":
             await state.finish()

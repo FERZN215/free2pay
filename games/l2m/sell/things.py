@@ -6,7 +6,7 @@ from ..keyboards.l2m_things import l2m_things_cat
 from keyboards.sell_conf import sell_conf_kb
 from keyboards.menu import menu_kb
 from usefull.is_digit import is_digit
-from usefull.th_type_to_text import type_to_text
+from usefull.converters import things_to_text
 
 class things_states(StatesGroup):
     thing_type = State()
@@ -40,7 +40,7 @@ async def thing_check(message:types.Message, state:FSMContext):
     await state.update_data(cost = float(message.text.replace(',', '.')))
     data = await state.get_data()
     await message.answer(
-        "Тип предмета: " + str(type_to_text(data.get("thing_type"))) + "\n" +
+        "Тип предмета: " + str(things_to_text(data.get("thing_type"))) + "\n" +
         "Описание: " + str(data.get("description")) + "\n" +
         "Цена: " + str(data.get("cost")), reply_markup=sell_conf_kb
     )
@@ -55,7 +55,8 @@ async def thing_db_set(call:types.CallbackQuery, state:FSMContext, db:Database):
         "under_server": data.get("under_server"),
         "type": data.get("thing_type"),
         "description": data.get("description"),
-        "cost":data.get("cost")
+        "cost":data.get("cost"),
+        "invis":False
     })
     await state.finish()
     await call.message.answer("Твое предложение видно всем!", reply_markup=menu_kb)

@@ -1,6 +1,6 @@
 from aiogram.types import  InlineKeyboardMarkup, InlineKeyboardButton
 
-from usefull.th_type_to_text import type_to_text
+from usefull.converters import things_to_text
         
 def offers_kb(posts, n, db):
     offers_kb = InlineKeyboardMarkup()
@@ -8,7 +8,7 @@ def offers_kb(posts, n, db):
         if(i>=10):
             break
         seller_name = db["users"].find_one({"telegram_id":posts[i]["seller"]})["local_name"]
-        cur = InlineKeyboardButton("Продавец: "+seller_name +"|Тип: "+ type_to_text(posts[i]["type"]) + "|Описание: "+str(posts[i]["description"][:10])+"|Цена: "+str(posts[i]["cost"]) + "|100%", callback_data="th_offer_id:"+str(posts[i]["_id"]))
+        cur = InlineKeyboardButton("Продавец: "+seller_name +"|Тип: "+ things_to_text(posts[i]["type"]) + "|Описание: "+str(posts[i]["description"][:10])+"|Цена: "+str(posts[i]["cost"]) + "|100%", callback_data="th_offer_id:"+str(posts[i]["_id"]))
         offers_kb.add(cur)
 
 

@@ -52,7 +52,7 @@ async def services_db_set(call: types.CallbackQuery, state: FSMContext, db: Data
 
     db["l2m"].insert_one(
         {"game": data.get("game"),"pr_type":data.get("game_type"), "server": data.get("server"), "under_server": data.get("under_server"),
-         "seller": call.message.chat.id, "name": data.get("name"), "cost": data.get("cost"), "description": data.get("description")})
+         "seller": call.message.chat.id, "name": data.get("name"), "cost": data.get("cost"), "description": data.get("description"), "invis":False})
     await state.finish()
     await call.message.answer("Твое предложения видно всем!", reply_markup=menu_kb)
 

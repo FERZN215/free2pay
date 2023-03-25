@@ -6,7 +6,7 @@ from bson.objectid import ObjectId
 from ..keyboards.offers.things_offers import offers_kb
 from ..keyboards.seller_kb import seller_kb
 from ..keyboards.buyer_kb import buyer_kb
-from usefull.th_type_to_text import type_to_text
+from usefull.converters import things_to_text
 from keyboards.menu import menu_kb
 
 
@@ -17,7 +17,7 @@ class things_list(StatesGroup):
 async def things_out(call:types.CallbackQuery, state:FSMContext, db:Database):
     data = await state.get_data()
     offers = []
-    for offer in db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server")}).sort("cost").limit(11):
+    for offer in db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server"), "invis":False}).sort("cost").limit(11):
         offers.append(offer)
     await things_list.cur_list.set()
     await state.update_data(cur_list = 10)
@@ -37,13 +37,13 @@ async def things_kb_pr(call:types.CallbackQuery, state:FSMContext, db:Database):
     match call.data.replace("_offers", ""):
         case "forward":
             _cur_list = data.get("cur_list") + 10
-            _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server")}).sort("cost").skip(data.get("cur_list")).limit(11)
+            _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server"), "invis":False}).sort("cost").skip(data.get("cur_list")).limit(11)
         case "back":
             _cur_list = data.get("cur_list") - 10
             if _cur_list == 10:
-                _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server")}).sort("cost").limit(11)
+                _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server"), "invis":False}).sort("cost").limit(11)
             else:
-                _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server")}).sort("cost").skip(_cur_list-10).limit(11)
+                _offers = db["l2m"].find({"game":data.get("game"),"pr_type":data.get("game_type"), "server":data.get("server"), "under_server":data.get("under_server"), "invis":False}).sort("cost").skip(_cur_list-10).limit(11)
 
         case "cancel":
             await state.finish()
@@ -77,7 +77,7 @@ async def one_thing_offer(call:types.CallbackQuery, state:FSMContext, db:Databas
         reply_kb = buyer_kb
     await call.message.answer(
         "Продавец: " + str(seller["local_name"]) + "\n" +
-        "Тип: " + str(type_to_text(product["type"])) + "\n" +
+        "Тип: " + str(things_to_text(product["type"])) + "\n" +
         "Описание: " + str(product["description"]) + "\n" +
         "Цена: " + str(product["cost"]) + "\n" +
         "Рейтинг: 96%\n",

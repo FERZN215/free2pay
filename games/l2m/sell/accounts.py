@@ -10,7 +10,7 @@ from keyboards.menu import menu_kb
 
 from usefull.is_digit import is_digit
 from usefull.add_warn import add_warn
-from usefull.acc_type_to_text import ac_t_t
+from usefull.converters import ac_t_t
 class accounts_states(StatesGroup):
     acc_type = State()
     level = State()
@@ -83,7 +83,8 @@ async def account_db_set(call: types.CallbackQuery, state: FSMContext, db: Datab
         "level" : data.get("level"),
         "cost" : data.get("cost"),
         "description" : data.get("description"),
-        "photos" :  data.get("photos")
+        "photos" :  data.get("photos"),
+        "invis": False
     })
     await state.finish()
     await call.message.answer("Твое предложения видно всем!", reply_markup=menu_kb)
