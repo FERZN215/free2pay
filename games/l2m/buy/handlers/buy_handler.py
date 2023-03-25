@@ -7,6 +7,8 @@ from functools import partial
 from ..buy import *
 
 
+from chat.chat import chat_start
+
 
 
 
@@ -81,6 +83,10 @@ async def buy_cancel_handler(call:types.CallbackQuery, state:FSMContext, db:Data
     await buy_cancel(call, state, db)
 
 
+async def chat_start_handler(call:types.CallbackQuery, state:FSMContext, db:Database, bot:Bot):
+    await chat_start(call, state, db, bot)
+
+
 def buy_handlers(dpc:Dispatcher, dbc:Database, botc:Bot):
     new_diamond_seller_start_handler = partial(diamond_seller_start_handler, db=dbc, bot=botc )
     new_diamond_get_lots_handler = partial(diamond_get_lots_handler, db=dbc, bot=botc )
@@ -120,6 +126,10 @@ def buy_handlers(dpc:Dispatcher, dbc:Database, botc:Bot):
     dpc.register_callback_query_handler(new_bueyr_trade_thing_handler, lambda c: "_buyer_au_" in c.data, state="*")
     dpc.register_message_handler(new_au_cost_handler, state=buy_list.au_cost)
     dpc.register_message_handler(new_trade_desc_handler, state=buy_list.trade_desc)
+
+
+    new_chat_start_handler = partial(chat_start_handler, db=dbc, bot=botc)
+    dpc.register_callback_query_handler(new_chat_start_handler, lambda c: c.data.startswith("buyer_chat:"), state="*")
 
 
     new_balance_add_process_handler = partial(balance_add_process_handler, db=dbc)

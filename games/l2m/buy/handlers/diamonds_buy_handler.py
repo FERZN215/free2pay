@@ -1,9 +1,9 @@
 from aiogram.dispatcher import FSMContext
 from aiogram import types
 from pymongo.database import Database
-from aiogram import Dispatcher
+from aiogram import Dispatcher, Bot
 from functools import partial
-
+from chat.chat import chat_start
 from ..diamonds import *
 from ..buy import diamond_buy_process
 from reviews.reviews import view_reviews
@@ -46,6 +46,8 @@ async def back_buttons_handler(call:types.CallbackQuery, state:FSMContext, db:Da
     await state.update_data(id = None)
     await diamonds_out(call, state, db)
 
+async def chat_start_handler(call:types.CallbackQuery, state:FSMContext, db:Database, bot:Bot):
+    await chat_start(call, state, db, bot )
 
 def diamonds_buy_handlers(dp: Dispatcher, dbc:Database, botc):
     new_diamonds_kb_handler = partial(diamonds_kb_handler, db=dbc)
@@ -55,7 +57,7 @@ def diamonds_buy_handlers(dp: Dispatcher, dbc:Database, botc):
     new_change_diamond_count_process_handler = partial(change_diamond_count_process_handler, db=dbc)
     new_delete_diamond_offer_handler = partial(delete_diamond_offer_handler, db=dbc)
     new_buy_porcess_start_handler = partial(buy_porcess_start_handler, db=dbc, bot=botc)
-
+    new_chat_start_handler = partial(chat_start_handler, db=dbc, bot=botc)
     new_view_reviews = partial(view_reviews, db=dbc)
 
     dp.register_callback_query_handler(new_view_reviews, lambda c:c.data=="buyer_reviews", state=diamonds_list.id)
@@ -70,7 +72,7 @@ def diamonds_buy_handlers(dp: Dispatcher, dbc:Database, botc):
     dp.register_callback_query_handler(new_delete_diamond_offer_handler, lambda c:c.data=="seller_delete", state=diamonds_list.id)
     
     
-    
+    dp.register_callback_query_handler(new_chat_start_handler, lambda c: c.data == "buyer_chat", state=diamonds_list.id)
 
     dp.register_callback_query_handler(new_buy_porcess_start_handler, lambda c: c.data == "d_button_buy", state=diamonds_list.sum)
 

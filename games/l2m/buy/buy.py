@@ -55,14 +55,10 @@ async def diamond_buy_process(call:types.CallbackQuery, state:FSMContext, db:Dat
     await state.finish()
 
 async def diamond_seller_start(call:types.CallbackQuery, state:FSMContext, db:Database, bot:Bot, n = False):
-
     if n:
         data_mas = call.data.partition("_one_")
     else:
         data_mas = call.data.partition("_buy_diamonds_start_")
-
-
-    
     try:    
         offer = db['active_deals'].find_one({"_id":ObjectId(data_mas[0])})
     except TypeError:
@@ -73,7 +69,6 @@ async def diamond_seller_start(call:types.CallbackQuery, state:FSMContext, db:Da
         case "yes":
             if not n:
                 await state.update_data(prev_state = await state.get_state())
-
             await buy_list.seller_ready.set()
             await state.update_data(cur_offer_id = ObjectId(data_mas[0]))
 
@@ -86,6 +81,7 @@ async def diamond_seller_start(call:types.CallbackQuery, state:FSMContext, db:Da
         case "later":
             await call.message.answer("Хорошо, ты сможешь продолжить данную сделку из раздела 'Активные сделки' в главном меню")
             await bot.send_message(offer["buyer"], "Продавец отложил заказ, в скором времени он может его возобновить, пока он не подтвердил заказ вы можете его отменить в разделе 'Активные сделки'")
+        
         case "no":
             db["l2m"].update_one({"_id":offer["offer_id"]}, {"$set":{"invis":False}})
             await call.message.answer("Печально")
@@ -102,6 +98,7 @@ async def diamond_get_lots(message:types.Message, state:FSMContext, db:Database,
     try:
 
         await state.set_state(data.get("prev_state"))
+        await state.update_data(prev_state = None)
     except ...:
         print("no state")
     await bot.send_message(offer["buyer"],"Продавец просит выставить:\n" + message.text + "\nПосле того как продавец выкупит все лоты, <b>ОБЯЗАТЕЛЬНО</b> перейди в раздел 'Активные сделки' и подтверди получение!",parse_mode='HTML')
@@ -110,13 +107,13 @@ async def diamond_get_lots(message:types.Message, state:FSMContext, db:Database,
 
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------
-# info = await buy_process_start_com(call, state, db)
+
 
 
 async def accounts_buy_process(call:types.CallbackQuery, state:FSMContext, db:Database, bot: Bot):
     info = await buy_process_start_com(call, state, db)
     
-    await call.message.answer("Продавцу отправлено уведомление, ожидайте", reply_markup=menu_kb)
+
     await bot.send_message(info["offer"]["seller"], "У вас хотят купить аккаунт\nСтоимость: " + str(info["offer"]["cost"])+"\n" + game_converter(info["offer"]["game"], info["offer"]["pr_type"])+
                            "\n"+server_converter(info["offer"]["server"])+"\n"+under_server_converter(info["offer"]["under_server"])+
                            "\nКласс: "+ac_t_t(info["offer"]["class"])+"\nУровень: "+str(info["offer"]["level"])+"\nОписание: "+str(info["offer"]["description"])+
@@ -170,6 +167,7 @@ async def accounts_get_password(message:types.Message, state:FSMContext, db:Data
     await message.reply("Данные отправлены покупателю. Если вам кажется, что покупатель специально не подтверждает получение, то можно перейти в раздел 'Активные сделки' и попытаться решить проблему в чате, в противном случае открыть арбитраж")
     try:
         await state.set_state(data.get("prev_state"))
+        await state.update_data(prev_state = None)
     except ...:
         print("no state")
     db["active_deals"].update_one({"_id": offer["_id"]}, {"$set": {"login": data.get("login")}})
@@ -198,6 +196,7 @@ async def accounts_verification_code_from_seller(message:types.Message, state:FS
     offer = db["active_deals"].find_one({"_id": ObjectId(data.get("buyer_code_id"))})
     await bot.send_message(offer["buyer"], "Продавец отправил код от аккаунта: "+str(offer["login"])+"\nПроверьте и подтвердите выполнение сделки:\n<b>"+ message.text+"</b>", parse_mode='HTML', reply_markup=access_code(offer["_id"]))
     await state.set_state(data.get("prev_state"))
+    await state.update_data(prev_state = None)
 
 
 
@@ -250,16 +249,10 @@ async def things_seller_start(call:types.CallbackQuery, state:FSMContext, db:Dat
         case "no":
             db["l2m"].update_one({"_id":offer["offer_id"]}, {"$set":{"invis":False}})
             await call.message.answer("Печально")
-            print("here")
             await bot.send_message(offer["buyer"], "Продавец отменил заказ, но ты можешь купить у других продавцов, удачи!")
-            print("here")
             db['active_deals'].delete_one({"_id": ObjectId(data_mas[0])})
-            print("here")
             db['users'].update_one({"telegram_id":call.message.chat.id}, {"$pull":{"deals":ObjectId(data_mas[0])}})
-            print("here")
-            
             db['users'].update_one({"telegram_id":offer["buyer"]}, {"$pull":{"deals":ObjectId(data_mas[0])}})
-            print("here")
             db['users'].update_one({"telegram_id":offer["buyer"]}, {"$inc":{"balance":offer["cost"]}})
 
 
@@ -282,6 +275,7 @@ async def thing_sell_type_process(call:types.CallbackQuery, state:FSMContext, db
         case "trade":
             await call.message.answer("Подождем подтверждения от покупателя, что он имеет 50+ уровень и 100 аламазов")
             await state.set_state(data.get("prev_state"))
+            await state.update_data(prev_state = None)
             await bot.send_message(offer["buyer"], "Продавец предлагает купить предмет с помошью трейда. Для этого вам нужно иметь 50+ уровень и 100 алмазов", reply_markup=au_buyer_kb(offer["_id"]))
 
 
@@ -291,6 +285,7 @@ async def au_cost(message:types.Message, state:FSMContext, db:Database, bot:Bot)
     if not is_digit(message.text):
         await message.reply("Цену нужно вводить цифрой")
     await state.set_state(data.get("prev_state"))
+    await state.update_data(prev_state = None)
     db["active_deals"].update_one({"_id":data.get("cur_offer_id")}, {"$set":{"status": "buyer awaiting"}})
     await bot.send_message(offer["buyer"], "Продавец выставит предмет за цену: <b>"+message.text+"</b>"+". После того как ты выкупишь товар не забудь завершить сделку в разделе активные сделки", parse_mode='HTML')
     await message.reply("Отправлено")
@@ -327,6 +322,7 @@ async def trade_desc(message:types.Message, state:FSMContext, db:Database, bot:B
     await bot.send_message(offer["buyer"], "Продавец отправил описание трейда:\n"+message.text+"\nПосле завершения трейда обязательно подтверди сделку из раздела активных сделок")
     await message.answer("Описание отправлено")
     await state.set_state(data.get("prev_state"))
+    await state.update_data(prev_state = None)
 
 
 

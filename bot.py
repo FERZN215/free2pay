@@ -32,6 +32,7 @@ from games.l2m.buy.handlers.things_buy_handler import things_buy_handler
 from games.l2m.buy.handlers.buy_handler import buy_handlers
 
 from reviews.reviews_handler import reviews_handlers
+from chat.chat_handlers import chat_handlers
 
 
 # mas = [1,2,3,4,5,6,7,8,9,0,11,22,33,44,55,66,77,88,99,00]
@@ -136,14 +137,14 @@ things_sell_handlers(dp, db)
 
 diamonds_buy_handlers(dp, db, bot)
 accounts_buy_handler(dp, db, bot)
-services_buy_handler(dp, db)
+services_buy_handler(dp, db, bot)
 things_buy_handler(dp, db, bot)
 buy_handlers(dp, db, bot)
 reviews_handlers(dp, db)
 active_deals_handlers(dp, db, bot)
 
 #--------------------------------------------------------------------------------------------------------------------------
-# back_from_one
+chat_handlers(dp, db, bot)
 
             
 
