@@ -75,3 +75,5 @@ def chat_db_conver(game:str):
     match game:
         case "game_lage2m":
             return "l2m"
+        case _:
+            return game

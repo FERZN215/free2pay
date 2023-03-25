@@ -6,7 +6,7 @@ from functools import partial
 
 from chat.chat import chat_start
 from ..services import *
-from ..buy import buy_process
+from ..buy import services_buy_process
 from reviews.reviews import view_reviews
 
 async def services_kb_handler(call:types.CallbackQuery, state:FSMContext, db:Database):
@@ -21,9 +21,9 @@ async def back_buttons_handler(call:types.CallbackQuery, state:FSMContext, db:Da
     await state.update_data(id = None)
     await services_out(call, state, db)
 
-async def buy_porcess_start_handler(call:types.CallbackQuery, state:FSMContext, db:Database):
+async def buy_porcess_start_handler(call:types.CallbackQuery, state:FSMContext, db:Database,  bot:Bot):
     await call.message.delete()
-    await buy_process(call, state, db)
+    await services_buy_process(call, state, db, bot)
 
 async def chat_start_handler(call:types.CallbackQuery, state:FSMContext, db:Database, bot:Bot):
     await chat_start(call, state, db, bot )
@@ -33,7 +33,7 @@ def services_buy_handler(dp:Dispatcher, dbc:Database, botc:Bot):
     new_accounts_kb_handler = partial(services_kb_handler, db=dbc)
     new_account_by_one_handler = partial(services_by_one_handler, db=dbc)
     new_back_buttons_handler = partial(back_buttons_handler, db=dbc)
-    new_buy_porcess_start_handler = partial(buy_porcess_start_handler, db = dbc)
+    new_buy_porcess_start_handler = partial(buy_porcess_start_handler, db = dbc, bot=botc)
     new_chat_start_handler = partial(chat_start_handler, db=dbc, bot=botc)
 
     new_view_reviews = partial(view_reviews, db=dbc)

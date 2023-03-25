@@ -69,6 +69,17 @@ async def trade_desc_handler(message:types.Message, state:FSMContext, db:Databas
     await trade_desc(message, state, db, bot)
 
 
+
+async def service_seller_start_handler(call:types.CallbackQuery, state:FSMContext, db:Database, bot:Bot):
+    await call.message.delete()
+    await services_seller_start(call, state, db, bot)
+
+async def service_get_instructions_handler(message:types.Message, state:FSMContext,  db:Database, bot:Bot):
+    await services_get_instruction(message, state, db, bot)
+
+
+
+
 async def buyer_accept_handler(call:types.CallbackQuery, state:FSMContext, db:Database, bot:Bot):
     await call.message.delete()
     await buyer_accept(call, state, db, bot)
@@ -127,10 +138,15 @@ def buy_handlers(dpc:Dispatcher, dbc:Database, botc:Bot):
     dpc.register_message_handler(new_au_cost_handler, state=buy_list.au_cost)
     dpc.register_message_handler(new_trade_desc_handler, state=buy_list.trade_desc)
 
+    
+    new_service_seller_start_handler = partial(service_seller_start_handler, db=dbc, bot=botc)
+    new_service_get_instructions_handler = partial(service_get_instructions_handler, db= dbc, bot=botc)
+
+    dpc.register_callback_query_handler(new_service_seller_start_handler, lambda c: "_buy_services_start_" in c.data, state="*")
+    dpc.register_message_handler(new_service_get_instructions_handler, state=buy_list.service_instruction)
 
     new_chat_start_handler = partial(chat_start_handler, db=dbc, bot=botc)
     dpc.register_callback_query_handler(new_chat_start_handler, lambda c: c.data.startswith("buyer_chat:"), state="*")
-
 
     new_balance_add_process_handler = partial(balance_add_process_handler, db=dbc)
     new_buy_cancel_handler = partial(buy_cancel_handler, db=dbc)

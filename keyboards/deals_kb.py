@@ -43,7 +43,7 @@ def active_deals_kb(deals, n,send, db):
         deals_kb.row(cancel)
     
 
-
+    deals_kb.add(InlineKeyboardButton("История", callback_data="deals_history"))
     return deals_kb
 
 
