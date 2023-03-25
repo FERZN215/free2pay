@@ -13,6 +13,8 @@ from exchange_f.exchange import *
 
 from personal_area.deals import deals_process, active_deals_list
 from personal_area.handlers.deals_handlers import active_deals_handlers
+from personal_area.handlers.my_chats_handlers import my_chats_handlers
+from personal_area.my_chats import chats_list
 
 from balance.b_add import *
 from balance.b_out import *
@@ -86,6 +88,8 @@ async def menu_handler(message:types.Message, state:FSMContext):
             await balance_add_summ(message, state)
         case "Вывести":
             await balance_out_sum(message, state)
+        case "Мои чаты":
+            await chats_list(message, state, db)
     
 @dp.message_handler(state= balance_out_states.sum_out)
 async def balance_out_process_handler(message:types.Message, state:FSMContext):
@@ -145,7 +149,7 @@ active_deals_handlers(dp, db, bot)
 
 #--------------------------------------------------------------------------------------------------------------------------
 chat_handlers(dp, db, bot)
-
+my_chats_handlers(dp, db, bot)
             
 
 

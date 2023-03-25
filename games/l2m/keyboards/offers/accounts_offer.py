@@ -5,8 +5,14 @@ def offers_kb(posts, n, db, sort="cost"):
     for i in range(len(posts)):
         if(i>=10):
             break
-        seller_name = db["users"].find_one({"telegram_id":posts[i]["seller"]})["local_name"]
-        cur = InlineKeyboardButton("Продавец: "+seller_name +"|Класс:"+ ac_t_t(posts[i]["class"]) + "|Уровень: "+str(posts[i]["level"])+"|Цена: "+str(posts[i]["cost"]), callback_data="acc_offer_id:"+str(posts[i]["_id"]))
+
+        seller = db["users"].find_one({"telegram_id":posts[i]["seller"]})
+        if seller["statistics"]["total"] >0:
+            rat = seller["statistics"]["successful"] / (seller["statistics"]["total"]/100)
+        else:
+            rat = 0
+        seller_name = seller["local_name"]
+        cur = InlineKeyboardButton("Продавец: "+seller_name +"|Класс:"+ ac_t_t(posts[i]["class"]) + "|Уровень: "+str(posts[i]["level"])+"|Цена: "+str(posts[i]["cost"])+"|Рейтинг: "+str(rat)+"%", callback_data="acc_offer_id:"+str(posts[i]["_id"]))
         offers_kb.add(cur)
 
     match sort:

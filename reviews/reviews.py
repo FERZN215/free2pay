@@ -21,6 +21,20 @@ async def view_reviews(call:types.CallbackQuery, state:FSMContext, db:Database):
     user = db["users"].find_one({"telegram_id": (db["l2m"].find_one({"_id": data.get("id")}))["seller"]})
     await review_list.review_list.set()
     await state.update_data(review_list = 10)
+    if len(user["reviews"]) <= 0:
+        await call.message.answer("У данного продавца отсутствуют отзывы, повод задуматься")
+        match data.get("game_type"):
+            case "cat_accounts":
+                await one_account_offer(call, state, db, True)
+            case "cat_diamonds":
+                await one_diamond_offer(state=state, db=db, msg=call.message)
+            case "cat_things":
+                await one_thing_offer(call, state, db, True)
+            case "cat_services":
+                await one_service_offer(call, state, db, True)
+            
+        return
+
     await call.message.answer("Вот все отзывы данного продавца: ", reply_markup=reviews_kb(user["reviews"][:11], 10))   
 
 async def review_kb_process(call:types.CallbackQuery, state:FSMContext, db:Database):

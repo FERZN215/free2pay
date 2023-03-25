@@ -21,14 +21,34 @@ async def chat_start(call:types.CallbackQuery, state:FSMContext, db:Database, bo
     if call.data.startswith("buyer_chat:"):
         deal = db["active_deals"].find_one({"_id":ObjectId(call.data.replace("buyer_chat:", ""))})
         offer = db[chat_db_conver(deal["game"])].find_one({"_id":deal["offer_id"]})
+        target_id = offer["seller"]
+    elif "_m_buyer_cha_" in call.data:
+        data_mass = call.data.partition("_m_buyer_cha_")
+        offer = db[data_mass[0]].find_one({"_id":ObjectId(data_mass[2])})
+        chat = db["chats"].find_one({"offer":offer["_id"]})
+
+        if chat["target"] == call.message.chat.id:
+            target_id = chat["source"]
+        else:
+            target_id = chat["target"]
+
+
+
+
+
     else:
         offer = db[chat_db_conver(data.get("game"))].find_one({"_id":data.get("id")})
-    target_id = offer["seller"]
+        target_id = offer["seller"]
+
+    
+
+
     check_exist = db["chats"].find_one({"offer":offer["_id"]})
 
     if not check_exist:
         chat= {
             "offer":offer["_id"],
+            "game":chat_db_conver(data.get("game")),
             "source":call.message.chat.id,
             "target":offer["seller"],
             "msgs":[]
@@ -49,10 +69,20 @@ async def chat_start_process(call:types.CallbackQuery, state:FSMContext, db:Data
     chat = db["chats"].find_one({"_id":ObjectId(data_mass[0])})
     match data_mass[2]:
         case "start":
+            if chat["_id"] not in db["users"].find_one({"telegram_id":call.message.chat.id})["chats"]:
+                db["users"].update_one({"telegram_id":call.message.chat.id},{"$push":{"chats":chat["_id"]}})
+
+            if chat["_id"] not in db["users"].find_one({"telegram_id":chat["source"]})["chats"]:
+                db["users"].update_one({"telegram_id":chat["source"]},{"$push":{"chats":chat["_id"]}})
+            
+
             await state.update_data(prev_state = await state.get_state(), target = chat["target"], source =chat["source"], chat_id = chat["_id"])
             await chat_states.chat_ready.set()
             await call.message.answer("Диалог начался:", reply_markup=stop_kb)
-            await bot.send_message(chat["source"], "Диалог начался", reply_markup=stop_kb)
+            if call.message.chat.id == chat["target"]:
+                await bot.send_message(chat["source"], "Диалог начался", reply_markup=stop_kb)
+            else:
+                await bot.send_message(chat["target"], "Диалог начался", reply_markup=stop_kb)
         case "cancel":
             data = await state.get_data()
             await state.set_state(data.get("prev_state"))

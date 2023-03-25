@@ -102,13 +102,18 @@ async def one_diamond_offer(call=None, state=None, db=None, msg = None):
         else:
             reply_kb = buyer_kb
 
+    if seller["statistics"]["total"] >0:
+        rat = seller["statistics"]["successful"] / (seller["statistics"]["total"]/100)
+    else:
+        rat = 0
+
     if msg == None:
         await call.message.answer(
             "Продавец: " + str(seller["local_name"]) + "\n" +
             "Количество: " + str(product["name"]) + "\n" +
             "Цена за единицу: " + str(product["cost"]) + "\n" +
             "Комиссия: " + str(com_sw(product["comission"])) + "\n" +
-            "Рейтинг: 96%\n",
+            "Рейтинг: "+str(rat)+"%",
             reply_markup= reply_kb
             
         )
@@ -118,7 +123,7 @@ async def one_diamond_offer(call=None, state=None, db=None, msg = None):
             "Количество: " + str(product["name"]) + "\n" +
             "Цена за единицу: " + str(product["cost"]) + "\n" +
             "Комиссия: " + str(com_sw(product["comission"])) + "\n" +
-            "Рейтинг: 96%\n",
+            "Рейтинг: "+str(rat)+"%",
             reply_markup= reply_kb
             
         )

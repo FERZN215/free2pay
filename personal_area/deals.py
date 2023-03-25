@@ -5,6 +5,8 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from keyboards.deals_kb import active_deals_kb, converter, status, one_active_deal_kb_buyer, one_active_deal_kb_seller
 from bson.objectid import ObjectId
 from games.l2m.buy.buy import diamond_seller_start, accounts_seller_start, things_seller_start
+from keyboards.menu import menu_kb
+
 class active_deals_list(StatesGroup):
     deal_list = State()
     id = State()
@@ -16,6 +18,10 @@ async def deals_process(message:types.Message, state:FSMContext, db:Database):
 
     user = db["users"].find_one({"telegram_id":message.chat.id})
 
+    if len(user["deals"]) <=0:
+        await message.answer("У вас нет активных сделок(", reply_markup=menu_kb)
+        await state.finish()
+        return
     
     await message.answer("Активные сделки:", reply_markup=active_deals_kb(user["deals"][:11], 10, message.chat.id, db))
 

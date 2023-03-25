@@ -75,12 +75,18 @@ async def one_thing_offer(call:types.CallbackQuery, state:FSMContext, db:Databas
         reply_kb = seller_kb
     else:
         reply_kb = buyer_kb
+
+    if seller["statistics"]["total"] >0:
+        rat = seller["statistics"]["successful"] / (seller["statistics"]["total"]/100)
+    else:
+        rat = 0
+        
     await call.message.answer(
         "Продавец: " + str(seller["local_name"]) + "\n" +
         "Тип: " + str(things_to_text(product["type"])) + "\n" +
         "Описание: " + str(product["description"]) + "\n" +
         "Цена: " + str(product["cost"]) + "\n" +
-        "Рейтинг: 96%\n",
+        "Рейтинг: "+str(rat)+"%",
         reply_markup= reply_kb
         
     )
