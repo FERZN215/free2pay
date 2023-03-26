@@ -43,6 +43,10 @@ async def account_description(message:types.Message, state:FSMContext):
         await message.answer("Цена должна быть числом, повтори попытку:")
         return
 
+    if float(message.text.replace(',', '.')) <= 0:
+        await message.answer("Так ты еще и заплатишь?")
+        return
+
     await state.update_data(cost = float(message.text.replace(',', '.')))
     await accounts_states.description.set()
     await message.answer("Напиши описание своему аккаунту одним сообщением до 200 символов:")

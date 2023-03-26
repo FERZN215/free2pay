@@ -64,7 +64,10 @@ def my_chats_kb(deals, n, send, db, history = False):
 
 
 
-       
+    if history:
+        deals_kb.add(InlineKeyboardButton("Активные", callback_data="active_chats"))
+    else:
+        deals_kb.add(InlineKeyboardButton("История", callback_data="history_chats"))
 
 
 
@@ -88,10 +91,7 @@ def my_chats_kb(deals, n, send, db, history = False):
         deals_kb.row(back, forward)
         deals_kb.row(cancel)
     
-    if history:
-        deals_kb.add(InlineKeyboardButton("Активные", callback_data="active_chats"))
-    else:
-        deals_kb.add(InlineKeyboardButton("История", callback_data="history_chats"))
+    
 
     return deals_kb
 

@@ -82,4 +82,9 @@ async def one_chat(call:types.CallbackQuery, state:FSMContext, db:Database):
             
             text += msg["text"] + "\n---------------\n"
         
-    await call.message.answer(text, reply_markup=one_chat_kb(chat["offer"], chat["game"]))
+    if len(chat["msgs"]) > 0:
+        await call.message.answer(text, reply_markup=one_chat_kb(chat["offer"], chat["game"]))
+    else:
+        await call.message.answer("Пустой диалог")
+        await chats_list(call.message, state, db)
+

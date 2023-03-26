@@ -30,6 +30,9 @@ async def services_description(message: types.Message, state: FSMContext):
     if is_digit(message.text) == False:
         await message.answer("Цена должна быть числом, попробуй еще раз:")
         return
+    if float(message.text.replace(',', '.')) <= 0:
+        await message.answer("Так ты еще и заплатишь?")
+        return
     await state.update_data(cost=float(message.text.replace(',', '.')))
     await services_states.description.set()
     await message.answer("Запомнил, теперь введи описание услуги")

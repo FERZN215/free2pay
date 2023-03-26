@@ -37,6 +37,10 @@ async def thing_check(message:types.Message, state:FSMContext):
         await message.answer("Цена должна быть числом, повтори попытку:")
         return
     
+    if float(message.text.replace(',', '.')) <= 0:
+        await message.answer("Так ты еще и заплатишь?")
+        return
+    
     await state.update_data(cost = float(message.text.replace(',', '.')))
     data = await state.get_data()
     await message.answer(

@@ -23,9 +23,9 @@ async def chat_start(call: types.CallbackQuery, state: FSMContext, db: Database,
         deal = db["active_deals"].find_one({"_id": ObjectId(call.data.replace("buyer_chat:", ""))})
         offer = db[chat_db_conver(deal["game"])].find_one({"_id": deal["offer_id"]})
         target_id = offer["seller"]
+
     elif "_m_buyer_cha_" in call.data:
         
-
         try:
             data_mass = call.data.partition("_m_buyer_cha_")
             offer = db[chat_db_conver(data_mass[0])].find_one({"_id": ObjectId(data_mass[2])})
@@ -33,8 +33,8 @@ async def chat_start(call: types.CallbackQuery, state: FSMContext, db: Database,
         except TypeError:
             data_mass = call.data.partition("_m_buyer_cha_")
             offer = db["active_deals"].find_one({"offer_id": ObjectId(data_mass[2])})
-
             chat = db["chats"].find_one({"offer":offer["offer_id"]})
+            
 
 
         if chat["target"] == call.message.chat.id:
@@ -42,13 +42,11 @@ async def chat_start(call: types.CallbackQuery, state: FSMContext, db: Database,
         else:
             target_id = chat["target"]
 
-
-
-
-
     else:
+        
         offer = db[chat_db_conver(data.get("game"))].find_one({"_id": data.get("id")})
         target_id = offer["seller"]
+
 
     check_exist = db["chats"].find_one({"offer": offer["_id"]})
 
@@ -73,7 +71,7 @@ async def chat_start(call: types.CallbackQuery, state: FSMContext, db: Database,
 
     n_t_d = await call.message.answer("Подождем пока собеседник подключится к чату", reply_markup=source_kb(chat["_id"]))
 
-    await state.update_data(prev_state=await state.get_state(), target=target_id, source=call.message.chat.id,
+    await state.update_data(prev_state=await state.get_state(), target=chat["target"], source=chat["source"],
                             chat_id=chat["_id"], need_to_del = n_t_d.message_id)
     await chat_states.chat_ready.set()
 
@@ -96,7 +94,8 @@ async def chat_start_process(call: types.CallbackQuery, state: FSMContext, db: D
             if chat["_id"] not in db["users"].find_one({"telegram_id": chat["source"]})["chats"]:
                 db["users"].update_one({"telegram_id": chat["source"]}, {"$push": {"chats": chat["_id"]}})
 
-
+            
+            
             await state.update_data(prev_state=await state.get_state(), target=chat["target"], source=chat["source"], chat_id=chat["_id"])
             await chat_states.chat_ready.set()
             await call.message.answer("Диалог начался:", reply_markup=stop_kb)
@@ -132,13 +131,24 @@ async def chat_start_process(call: types.CallbackQuery, state: FSMContext, db: D
 async def message_process_handler(message: types.Message, state: FSMContext, db: Database, dp: Dispatcher, bot: Bot):
     data = await state.get_data()
     
+
+    
     if message.text == "Стоп":
         if data.get("msg_mass") and len(data.get("msg_mass")) > 0:
             for id in data.get("msg_mass"):
-                try:
-                    await bot.delete_message(data.get("target"), id)
-                except:
+                await bot.delete_message(message.chat.id, id)
+
+        if message.chat.id == data.get("target"):
+            another_data = await dp.storage.get_data(chat=data.get("source"))
+            if another_data.get("msg_mass") and len(another_data.get("msg_mass")) > 0:
+                for id in another_data.get("msg_mass"):
                     await bot.delete_message(data.get("source"), id)
+        else:
+            another_data = await dp.storage.get_data(chat=data.get("target"))
+    
+            if another_data.get("msg_mass") and len(another_data.get("msg_mass")) > 0:
+                for id in another_data.get("msg_mass"):
+                    await bot.delete_message(data.get("target"), id)
 
         
  
@@ -158,29 +168,36 @@ async def message_process_handler(message: types.Message, state: FSMContext, db:
             await dp.storage.set_state(chat=chat["source"], state=target_data.get("prev_state"))
             await dp.storage.update_data(chat=chat["source"], prev_state=None, msg_mass = None, target = None, source = None)
             await bot.send_message(chat["source"], "Диалог завершен", reply_markup=menu_kb)
-
-
-
         return
 
     if message.chat.id == data.get("target"):
+        
         another_data = await dp.storage.get_data(chat=data.get("source"))
         if await dp.storage.get_state(chat=data.get("source")) != "chat_states:chat_ready" or another_data.get("target") != data.get("target") or another_data.get("source") != data.get("source"):
             return
         
+        
     else:
+        
         another_data = await dp.storage.get_data(chat=data.get("target"))
         if await dp.storage.get_state(chat=data.get("target")) != "chat_states:chat_ready" or another_data.get("target") != data.get("target") or another_data.get("source") != data.get("source"):
             return
+        
        
 
-   
+    
+    if data.get("msg_mass"):
+        n_l_mass = data.get("msg_mass")
+        n_l_mass.append(message.message_id)
+        await state.update_data(msg_mass = n_l_mass)
+    else:
+        await state.update_data(msg_mass = [message.message_id])
 
     if message.chat.id == data.get("target"):
 
         target_data = await dp.storage.get_data(chat=data.get("source"))
 
-
+        
 
         if message.photo:
             photo_buf_id = ""
@@ -207,12 +224,9 @@ async def message_process_handler(message: types.Message, state: FSMContext, db:
         if target_data.get("msg_mass"):
             n_mass = target_data.get("msg_mass")
             n_mass.append(msg.message_id)
-            n_mass.append(message.message_id)
             await dp.storage.update_data(chat= data.get("source"), msg_mass = n_mass)
-            await state.update_data(msg_mass = n_mass)
         else:
-            await dp.storage.update_data(chat=data.get("source"), msg_mass =  [msg.message_id, message.message_id])
-            await state.update_data(msg_mass =  [msg.message_id, message.message_id])
+            await dp.storage.update_data(chat=data.get("source"), msg_mass =  [msg.message_id])
 
         
     else:
@@ -245,19 +259,16 @@ async def message_process_handler(message: types.Message, state: FSMContext, db:
         if target_data.get("msg_mass"):
             n_mass = target_data.get("msg_mass")
             n_mass.append(msg.message_id)
-            n_mass.append(message.message_id)
             await dp.storage.update_data(chat= data.get("target"), msg_mass = n_mass)
-            await state.update_data(msg_mass = n_mass)
         else:
-            await dp.storage.update_data(chat=data.get("target"), msg_mass = [msg.message_id, message.message_id])
-            await state.update_data(msg_mass =  [msg.message_id, message.message_id])
+            await dp.storage.update_data(chat=data.get("target"), msg_mass =  [msg.message_id])
 
 
 
     if message.chat.id == data.get("target"):
-        res = db["chats"].update_one({"_id": data.get("chat_id")}, {"$push": {"msgs": {"from": data.get("target"), "to": data.get("source"), "text": message.text}}})
+        db["chats"].update_one({"_id": data.get("chat_id")}, {"$push": {"msgs": {"from": data.get("target"), "to": data.get("source"), "text": message.text}}})
     else:
-        res = db["chats"].update_one({"_id": data.get("chat_id")}, {
+        db["chats"].update_one({"_id": data.get("chat_id")}, {
             "$push": {"msgs": {"from": data.get("source"), "to": data.get("target"), "text": message.text}}})
         
   

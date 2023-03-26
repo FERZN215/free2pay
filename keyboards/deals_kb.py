@@ -27,7 +27,10 @@ def active_deals_kb(deals, n,send, db, history=False):
         cur = InlineKeyboardButton(text + game_converter(deal["game"], deal["category"]) + "|Цена: "+str(deal["cost"])+"|Статус: " + status(deal["status"]), callback_data="active_deal_id:"+str(deal["_id"]))
         deals_kb.add(cur)
 
-
+    if history:
+        deals_kb.add(InlineKeyboardButton("Активные", callback_data="active_deals"))
+    else:
+        deals_kb.add(InlineKeyboardButton("История", callback_data="history_deals"))
 
     if n == 10 and len(deals) < 11:
         cancel = InlineKeyboardButton("Cancel", callback_data="cancel_deals")
@@ -49,10 +52,7 @@ def active_deals_kb(deals, n,send, db, history=False):
         deals_kb.row(back, forward)
         deals_kb.row(cancel)
     
-    if history:
-        deals_kb.add(InlineKeyboardButton("Активные", callback_data="active_deals"))
-    else:
-        deals_kb.add(InlineKeyboardButton("История", callback_data="history_deals"))
+    
     return deals_kb
 
 

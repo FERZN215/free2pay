@@ -31,6 +31,11 @@ async def diamonds_cost(message:types.Message, state:FSMContext):
     if message.text.isdigit() == False:
         await message.answer("Количество алмазов нужно ввести числом. Попробуй еще раз:")
         return
+    
+    if int(message.text) <= 0:
+        await message.answer("Нормально ты придумал, тебе и деньги и алмазы")
+        return
+    
     await state.update_data(diamonds = int(message.text))
     await diamods_states.diamonds_cost.set()
     await message.answer("Запомнил. Теперь напиши цену за один алмаз:")
@@ -38,6 +43,9 @@ async def diamonds_cost(message:types.Message, state:FSMContext):
 async def commission(message:types.Message, state:FSMContext):
     if is_digit(message.text) == False:
         await message.answer("Цену одного алмаза нужно ввести числом. Попробуй еще раз:")
+        return
+    if float(message.text.replace(',', '.')) <= 0:
+        await message.answer("Так ты еще и заплатишь?")
         return
     await state.update_data(diamonds_cost=float(message.text.replace(',', '.')))
     await diamods_states.comission.set()
