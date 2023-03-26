@@ -32,23 +32,28 @@ async def back_buttons_handler(call:types.CallbackQuery, state:FSMContext, db:Da
 async def chat_start_handler(call:types.CallbackQuery, state:FSMContext, db:Database, bot:Bot):
     await chat_start(call, state, db, bot )
 
+async def delete_accounts_offer_handler(call:types.CallbackQuery, state:FSMContext, db:Database):
+    await call.message.delete()
+    await delete_accounts_offer(call, state, db)
+
 def accounts_buy_handler(dp:Dispatcher, dbc:Database, botc:Bot):
     new_accounts_kb_handler = partial(accounts_kb_handler, db=dbc)
     new_account_by_one_handler = partial(account_by_one_handler, db=dbc)
     new_back_buttons_handler = partial(back_buttons_handler, db=dbc)
     new_buy_porcess_start_handler = partial(buy_porcess_start_handler, db = dbc, bot=botc)
     new_chat_start_handler = partial(chat_start_handler, db=dbc, bot=botc)
+    new_delete_diamond_offer_handler = partial(delete_accounts_offer_handler, db=dbc)
 
 
     new_view_reviews = partial(view_reviews, db=dbc)
     dp.register_callback_query_handler(new_view_reviews, lambda c:c.data=="buyer_reviews", state=accounts_list.id)
 
     
-    dp.register_callback_query_handler(new_accounts_kb_handler, lambda c: c.data.endswith("_offers"), state=accounts_list.cur_list)
+    dp.register_callback_query_handler(new_accounts_kb_handler, lambda c: c.data.endswith("_offers") or c.data.startswith("account_"), state=accounts_list.cur_list)
     dp.register_callback_query_handler(new_account_by_one_handler, lambda c: c.data.startswith("acc_offer_id:"), state=accounts_list.cur_list)
 
     dp.register_callback_query_handler(new_buy_porcess_start_handler, lambda c: c.data == "buyer_buy", state=accounts_list.id)
 
     dp.register_callback_query_handler(new_chat_start_handler, lambda c: c.data == "buyer_chat", state=accounts_list.id)
-
+    dp.register_callback_query_handler(new_delete_diamond_offer_handler, lambda c:c.data=="seller_delete", state=accounts_list.id)
     dp.register_callback_query_handler(new_back_buttons_handler, lambda c: c.data=="back_from_one", state=accounts_list.id)

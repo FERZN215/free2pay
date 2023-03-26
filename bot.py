@@ -15,9 +15,13 @@ from personal_area.deals import deals_process, active_deals_list
 from personal_area.handlers.deals_handlers import active_deals_handlers
 from personal_area.handlers.my_chats_handlers import my_chats_handlers
 from personal_area.my_chats import chats_list
+from personal_area.handlers.all_offers_handlers import all_offers_handlers
 
 from balance.b_add import *
 from balance.b_out import *
+
+
+from start.personal_area import Profile
 
 
 from games.l2m.sell.handlers.services_handlers import services_sell_handlers
@@ -35,6 +39,7 @@ from games.l2m.buy.handlers.buy_handler import buy_handlers
 
 from reviews.reviews_handler import reviews_handlers
 from chat.chat_handlers import chat_handlers
+from personal_area.handlers.my_reviews_handlers import my_reviews_handlers
 
 
 # mas = [1,2,3,4,5,6,7,8,9,0,11,22,33,44,55,66,77,88,99,00]
@@ -78,8 +83,6 @@ async def menu_handler(message:types.Message, state:FSMContext):
     match message.text:
         case "Профиль":
             await personal_area(message, db)
-        case "Отзывы":
-            return# await reviews_process(message, db)
         case "Активные сделки":
             await deals_process(message,state, db)
         case "Купить" | "Продать":
@@ -90,6 +93,8 @@ async def menu_handler(message:types.Message, state:FSMContext):
             await balance_out_sum(message, state)
         case "Мои чаты":
             await chats_list(message, state, db)
+        case "Поддержка":
+            await message.answer("Поддерживаю", reply_markup=menu_kb)
     
 @dp.message_handler(state= balance_out_states.sum_out)
 async def balance_out_process_handler(message:types.Message, state:FSMContext):
@@ -126,6 +131,13 @@ async def back_from_deals_handler(call:types.CallbackQuery, state:FSMContext):
     await call.message.delete()
     await deals_process(call.message, state, db)
 
+
+@dp.callback_query_handler(lambda c: c.data == "all_back", state=Profile.profile)
+async def back_from_profile_handler(call:types.CallbackQuery, state:FSMContext):
+    await call.message.delete()
+    await state.finish()
+    await preview(call.message, db)
+
 #--------------------------------------------------------------------------------------------------------------------------
 
 
@@ -150,8 +162,8 @@ active_deals_handlers(dp, db, bot)
 #--------------------------------------------------------------------------------------------------------------------------
 chat_handlers(dp, db, bot)
 my_chats_handlers(dp, db, bot)
-            
-
+all_offers_handlers(dp, db)
+my_reviews_handlers(dp, db)
 
 
 

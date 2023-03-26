@@ -2,7 +2,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram import types, Bot
 from pymongo.database import Database
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from keyboards.deals_kb import active_deals_kb, converter, status, one_active_deal_kb_buyer, one_active_deal_kb_seller
+from keyboards.deals_kb import active_deals_kb, game_converter, status, one_active_deal_kb_buyer, one_active_deal_kb_seller
 from bson.objectid import ObjectId
 from games.l2m.buy.buy import diamond_seller_start, accounts_seller_start, things_seller_start, services_seller_start
 from keyboards.menu import menu_kb
@@ -32,6 +32,16 @@ async def deals_kb_process(call:types.CallbackQuery, state:FSMContext, db:Databa
     data = await state.get_data()
     user = db["users"].find_one({"telegram_id": call.message.chat.id})
     match call.data.replace("_deals", ""):
+
+        case"history":
+            await state.update_data(deal_list = 10, d_history = True)
+            await call.message.edit_reply_markup(active_deals_kb(user["deals"][:11], 10, call.message.chat.id, db, True))
+            return
+        
+        case "active":
+            await state.update_data(deal_list = 10, d_history = False)
+            await call.message.edit_reply_markup(active_deals_kb(user["deals"][:11], 10, call.message.chat.id, db))
+            return
         case "forward":
             _cur_list = data.get("deal_list") + 10
             _deals = user["deals"][data.get("deal_list"): _cur_list+1]
@@ -46,7 +56,10 @@ async def deals_kb_process(call:types.CallbackQuery, state:FSMContext, db:Databa
             return
         
     await state.update_data(deal_list = _cur_list)
-    await call.message.edit_reply_markup(active_deals_kb(_deals, _cur_list, call.message.chat.id, db))
+    if data.get("d_history"):
+        await call.message.edit_reply_markup(active_deals_kb(_deals, _cur_list, call.message.chat.id, db, True))
+    else:
+        await call.message.edit_reply_markup(active_deals_kb(_deals, _cur_list, call.message.chat.id, db))
 
 async def one_active_deal(call:types.CallbackQuery, state:FSMContext, db:Database):
     try:
@@ -64,7 +77,7 @@ async def one_active_deal(call:types.CallbackQuery, state:FSMContext, db:Databas
         need_kb = one_active_deal_kb_seller(deal["status"], deal["_id"])
     await active_deals_list.id.set()
     await call.message.answer(
-        converter(deal["game"], deal["category"]) + "\n" +
+        game_converter(deal["game"], deal["category"]) + "\n" +
         "Продавец: " + seller["local_name"] +"\n"+
         "Покупатель: " + buyer["local_name"] +"\n"+
         "Статус: " + status(deal["status"]) +"\n"+

@@ -1,7 +1,8 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-reviews = KeyboardButton("Отзывы")
-deals = KeyboardButton("Сделки")
+reviews = InlineKeyboardButton("Отзывы", callback_data="all_reviews")
+deals = InlineKeyboardButton("Сделки", callback_data="all_offers")
+back = InlineKeyboardButton("Назад", callback_data="all_back")
 
 
-personal_area_kb = ReplyKeyboardMarkup(resize_keyboard=True).row(reviews, deals)     
+personal_area_kb = InlineKeyboardMarkup().row(reviews, deals).add(back)    

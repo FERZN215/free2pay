@@ -16,7 +16,7 @@ def offers_kb(posts, n, db):
         cur = InlineKeyboardButton("Продавец: "+seller_name +"|Тип: "+ things_to_text(posts[i]["type"]) + "|Описание: "+str(posts[i]["description"][:10])+"|Цена: "+str(posts[i]["cost"]) +"|Рейтинг: "+str(rat)+"%", callback_data="th_offer_id:"+str(posts[i]["_id"]))
         offers_kb.add(cur)
 
-
+    offers_kb.add(InlineKeyboardButton("По типу", callback_data="type_offers"))
 
 
     if n == 10 and len(posts) < 11:
@@ -40,5 +40,6 @@ def offers_kb(posts, n, db):
         offers_kb.row(cancel)
     
 
+   
 
     return offers_kb

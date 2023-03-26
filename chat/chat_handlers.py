@@ -9,7 +9,7 @@ from functools import partial
 from chat.chat import *
 
 async def chat_start_process_handler(call:types.CallbackQuery, state:FSMContext, db:Database,bot:Bot, dp:Dispatcher):
-    #await call.message.delete()
+    await call.message.delete()
     await chat_start_process(call, state, db, bot, dp)
 
 async def message_process_handler_handler(message:types.Message, state:FSMContext, db:Database,dp:Dispatcher, bot:Bot):

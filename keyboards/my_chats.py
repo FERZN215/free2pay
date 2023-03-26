@@ -1,7 +1,7 @@
 from aiogram.types import  InlineKeyboardMarkup, InlineKeyboardButton
 from usefull.converters import game_converter
 
-def my_chats_kb(deals, n, send, db):
+def my_chats_kb(deals, n, send, db, history = False):
     deals_kb = InlineKeyboardMarkup()
     for i in range(len(deals)):
         if i>=10 or i >=len(deals):
@@ -11,26 +11,60 @@ def my_chats_kb(deals, n, send, db):
 
         offer = db[chat["game"]].find_one({"_id":chat["offer"]})
 
-
-        if send == offer["seller"]:
-            if chat["target"] == send:
-                buyer = db["users"].find_one({"telegram_id":chat["source"]})
-                text = "Покупатель" + str(buyer["local_name"]) + "|"
+        try:
+            if send == offer["seller"]:
+                if chat["target"] == send:
+                    buyer = db["users"].find_one({"telegram_id":chat["source"]})
+                    text = "Покупатель" + str(buyer["local_name"]) + "|"
+                else:
+                    buyer = db["users"].find_one({"telegram_id":chat["target"]})
+                    text = "Покупатель" + str(buyer["local_name"]) + "|"
             else:
-                buyer = db["users"].find_one({"telegram_id":chat["target"]})
-                text = "Покупатель" + str(buyer["local_name"]) + "|"
-        else:
-            if chat["target"] == send:
-                seller = db["users"].find_one({"telegram_id":chat["source"]})
-                text = "Продавец:"+ str(seller["local_name"]) + "|"
-            else:
-                seller = db["users"].find_one({"telegram_id":chat["target"]})
-                text = "Продавец:"+ str(seller["local_name"]) + "|"
+                if chat["target"] == send:
+                    seller = db["users"].find_one({"telegram_id":chat["source"]})
+                    text = "Продавец:"+ str(seller["local_name"]) + "|"
+                else:
+                    seller = db["users"].find_one({"telegram_id":chat["target"]})
+                    text = "Продавец:"+ str(seller["local_name"]) + "|"
+
+            cur = InlineKeyboardButton(text + game_converter(offer["game"], offer["pr_type"]) + "|Цена: "+str(offer["cost"]), callback_data="my_chmat_id:"+str(chat["_id"]))
+            deals_kb.add(cur)
+        except TypeError:
+            try:
+
+                offer = db["active_deals"].find_one({"offer_id":chat["offer"]})
+                if history:
+                    if offer["status"] != "well done":
+                        continue
+                else:
+                    if offer["status"] == "well done":
+                        continue
+
+                if send == offer["seller"]:
+                    if chat["target"] == send:
+                        buyer = db["users"].find_one({"telegram_id":chat["source"]})
+                        text = "Покупатель" + str(buyer["local_name"]) + "|"
+                    else:
+                        buyer = db["users"].find_one({"telegram_id":chat["target"]})
+                        text = "Покупатель" + str(buyer["local_name"]) + "|"
+                else:
+                    if chat["target"] == send:
+                        seller = db["users"].find_one({"telegram_id":chat["source"]})
+                        text = "Продавец:"+ str(seller["local_name"]) + "|"
+                    else:
+                        seller = db["users"].find_one({"telegram_id":chat["target"]})
+                        text = "Продавец:"+ str(seller["local_name"]) + "|"
+
+                cur = InlineKeyboardButton(text + game_converter(offer["game"], offer["category"]) + "|Цена: "+str(offer["cost"]), callback_data="my_chmat_id:"+str(chat["_id"]))
+                deals_kb.add(cur)
+            except TypeError:
+                deals_kb.add(InlineKeyboardButton("Cancel", callback_data="cancel_chats"))
+                return deals_kb
 
 
 
-        cur = InlineKeyboardButton(text + game_converter(offer["game"], offer["pr_type"]) + "|Цена: "+str(offer["cost"]), callback_data="my_chmat_id:"+str(chat["_id"]))
-        deals_kb.add(cur)
+
+       
 
 
 
@@ -54,7 +88,10 @@ def my_chats_kb(deals, n, send, db):
         deals_kb.row(back, forward)
         deals_kb.row(cancel)
     
-
+    if history:
+        deals_kb.add(InlineKeyboardButton("Активные", callback_data="active_chats"))
+    else:
+        deals_kb.add(InlineKeyboardButton("История", callback_data="history_chats"))
 
     return deals_kb
 

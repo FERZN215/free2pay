@@ -18,8 +18,21 @@ def offers_kb(posts, n, db, sort="cost"):
     match sort:
         case "cost":
             offers_kb.add(InlineKeyboardButton("По уровню", callback_data="level_offers"))
+            offers_kb.add(InlineKeyboardButton("По классу", callback_data="class_offers"))
         case "level":
             offers_kb.add(InlineKeyboardButton("По цене", callback_data="cost_offers"))
+            offers_kb.add(InlineKeyboardButton("По классу", callback_data="class_offers"))
+        case "class":
+            offers_kb.add(InlineKeyboardButton("По уровню", callback_data="level_offers"))
+            offers_kb.add(InlineKeyboardButton("По классу", callback_data="class_offers"))
+        case "c_cost":
+            offers_kb.add(InlineKeyboardButton("По уровню", callback_data="level_offers"))
+            offers_kb.add(InlineKeyboardButton("По классу", callback_data="class_offers"))
+        case "c_level":
+            offers_kb.add(InlineKeyboardButton("По цене", callback_data="cost_offers"))
+            offers_kb.add(InlineKeyboardButton("По классу", callback_data="class_offers"))
+
+            
 
             
 

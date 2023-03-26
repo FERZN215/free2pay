@@ -25,9 +25,17 @@ async def chat_start(call: types.CallbackQuery, state: FSMContext, db: Database,
         target_id = offer["seller"]
     elif "_m_buyer_cha_" in call.data:
         
-        data_mass = call.data.partition("_m_buyer_cha_")
-        offer = db[chat_db_conver(data_mass[0])].find_one({"_id": ObjectId(data_mass[2])})
-        chat = db["chats"].find_one({"offer": offer["_id"]})
+
+        try:
+            data_mass = call.data.partition("_m_buyer_cha_")
+            offer = db[chat_db_conver(data_mass[0])].find_one({"_id": ObjectId(data_mass[2])})
+            chat = db["chats"].find_one({"offer": offer["_id"]})
+        except TypeError:
+            data_mass = call.data.partition("_m_buyer_cha_")
+            offer = db["active_deals"].find_one({"offer_id": ObjectId(data_mass[2])})
+
+            chat = db["chats"].find_one({"offer":offer["offer_id"]})
+
 
         if chat["target"] == call.message.chat.id:
             target_id = chat["source"]
@@ -44,6 +52,10 @@ async def chat_start(call: types.CallbackQuery, state: FSMContext, db: Database,
 
     check_exist = db["chats"].find_one({"offer": offer["_id"]})
 
+
+    
+   
+
     if not check_exist:
         chat = {
             "offer": offer["_id"],
@@ -57,11 +69,14 @@ async def chat_start(call: types.CallbackQuery, state: FSMContext, db: Database,
         chat = check_exist
 
     source = db["users"].find_one({"telegram_id": call.message.chat.id})
+    
+
+    n_t_d = await call.message.answer("Подождем пока собеседник подключится к чату", reply_markup=source_kb(chat["_id"]))
+
     await state.update_data(prev_state=await state.get_state(), target=target_id, source=call.message.chat.id,
-                            chat_id=chat["_id"])
+                            chat_id=chat["_id"], need_to_del = n_t_d.message_id)
     await chat_states.chat_ready.set()
 
-    await call.message.answer("Подождем пока собеседник подключится к чату", reply_markup=source_kb(chat["_id"]))
     await bot.send_message(target_id, "C вами хочет начать диалог " + source["local_name"],
                            reply_markup=chat_start_kb(chat["_id"]))
 
@@ -69,6 +84,10 @@ async def chat_start(call: types.CallbackQuery, state: FSMContext, db: Database,
 async def chat_start_process(call: types.CallbackQuery, state: FSMContext, db: Database, bot: Bot, dp: Dispatcher):
     data_mass = call.data.partition("_chat_")
     chat = db["chats"].find_one({"_id": ObjectId(data_mass[0])})
+    if await state.get_state() == "chat_states:chat_ready":
+        await call.message.answer("Закончи свой текущий диалог, либо ты можешь отменить запрос")
+        return
+
     match data_mass[2]:
         case "start":
             if chat["_id"] not in db["users"].find_one({"telegram_id": call.message.chat.id})["chats"]:
@@ -77,13 +96,22 @@ async def chat_start_process(call: types.CallbackQuery, state: FSMContext, db: D
             if chat["_id"] not in db["users"].find_one({"telegram_id": chat["source"]})["chats"]:
                 db["users"].update_one({"telegram_id": chat["source"]}, {"$push": {"chats": chat["_id"]}})
 
+
             await state.update_data(prev_state=await state.get_state(), target=chat["target"], source=chat["source"], chat_id=chat["_id"])
             await chat_states.chat_ready.set()
             await call.message.answer("Диалог начался:", reply_markup=stop_kb)
             if call.message.chat.id == chat["target"]:
-                await bot.send_message(chat["source"], "Диалог начался", reply_markup=stop_kb)
+                target_data = await dp.storage.get_data(chat=chat["source"])
+
+                await bot.delete_message(chat["source"], target_data.get("need_to_del"))
+             
+                await bot.send_message(chat["source"], "Диалог начался:", reply_markup=stop_kb)
             else:
-                await bot.send_message(chat["target"], "Диалог начался", reply_markup=stop_kb)
+                target_data = await dp.storage.get_data(chat=chat["target"])
+            
+                await bot.delete_message(chat["target"], target_data.get("need_to_del"))
+            
+                await bot.send_message(chat["target"], "Диалог начался:", reply_markup=stop_kb)
         case "cancel":
             data = await state.get_data()
             await state.set_state(data.get("prev_state"))
@@ -103,22 +131,35 @@ async def chat_start_process(call: types.CallbackQuery, state: FSMContext, db: D
 
 async def message_process_handler(message: types.Message, state: FSMContext, db: Database, dp: Dispatcher, bot: Bot):
     data = await state.get_data()
+    
     if message.text == "Стоп":
+        if data.get("msg_mass") and len(data.get("msg_mass")) > 0:
+            for id in data.get("msg_mass"):
+                try:
+                    await bot.delete_message(data.get("target"), id)
+                except:
+                    await bot.delete_message(data.get("source"), id)
 
+        
+ 
         await state.set_state(data.get("prev_state"))
-        await state.update_data(prev_state=None)
+
+        
+        await state.update_data(prev_state=None, msg_mass = None, target = None, source = None)
         await message.answer("Диалог заверешен", reply_markup=menu_kb)
         chat = db["chats"].find_one({"_id": data.get("chat_id")})
         if message.chat.id == chat["source"]:
             target_data = await dp.storage.get_data(chat=chat["target"])
             await dp.storage.set_state(chat=chat["target"], state=target_data.get("prev_state"))
-            await dp.storage.update_data(chat=chat["target"], prev_state=None)
+            await dp.storage.update_data(chat=chat["target"], prev_state=None, msg_mass = None, target = None, source = None)
             await bot.send_message(chat["target"], "Диалог завершен", reply_markup=menu_kb)
         else:
             target_data = await dp.storage.get_data(chat=chat["source"])
             await dp.storage.set_state(chat=chat["source"], state=target_data.get("prev_state"))
-            await dp.storage.update_data(chat=chat["source"], prev_state=None)
+            await dp.storage.update_data(chat=chat["source"], prev_state=None, msg_mass = None, target = None, source = None)
             await bot.send_message(chat["source"], "Диалог завершен", reply_markup=menu_kb)
+
+
 
         return
 
@@ -133,7 +174,14 @@ async def message_process_handler(message: types.Message, state: FSMContext, db:
             return
        
 
+   
+
     if message.chat.id == data.get("target"):
+
+        target_data = await dp.storage.get_data(chat=data.get("source"))
+
+
+
         if message.photo:
             photo_buf_id = ""
             for photo in message.photo:
@@ -149,12 +197,30 @@ async def message_process_handler(message: types.Message, state: FSMContext, db:
                 os.remove('photos/' + str(photo.file_unique_id) + '.jpg')
 
             if message.caption:
-                await bot.send_message(data.get("source"), "Отправил:\n" + message.caption, reply_markup=stop_kb)
+                msg = await bot.send_message(data.get("source"), "Отправил:\n" + message.caption, reply_markup=stop_kb)
             elif message.text:
-                await bot.send_message(data.get("source"), "Отправил:\n" + message.text, reply_markup=stop_kb)
+                msg = await bot.send_message(data.get("source"), "Отправил:\n" + message.text, reply_markup=stop_kb)
+                
         else:
-            await bot.send_message(data.get("source"), "Отправил:\n" + message.text, reply_markup=stop_kb)
+            msg = await bot.send_message(data.get("source"), "Отправил:\n" + message.text, reply_markup=stop_kb)
+
+        if target_data.get("msg_mass"):
+            n_mass = target_data.get("msg_mass")
+            n_mass.append(msg.message_id)
+            n_mass.append(message.message_id)
+            await dp.storage.update_data(chat= data.get("source"), msg_mass = n_mass)
+            await state.update_data(msg_mass = n_mass)
+        else:
+            await dp.storage.update_data(chat=data.get("source"), msg_mass =  [msg.message_id, message.message_id])
+            await state.update_data(msg_mass =  [msg.message_id, message.message_id])
+
+        
     else:
+
+        target_data = await dp.storage.get_data(chat=data.get("target"))
+
+        
+
         if message.photo:
    
             photo_buf_id = ""
@@ -170,15 +236,28 @@ async def message_process_handler(message: types.Message, state: FSMContext, db:
                 os.remove('photos/' + str(photo.file_unique_id) + '.jpg')
 
             if message.caption:
-                await bot.send_message(data.get("target"), "Отправил:\n" + message.caption, reply_markup=stop_kb)
+                msg = await bot.send_message(data.get("target"), "Отправил:\n" + message.caption, reply_markup=stop_kb)
             elif message.text:
-                await bot.send_message(data.get("target"), "Отправил:\n" + message.text, reply_markup=stop_kb)
+                msg = await bot.send_message(data.get("target"), "Отправил:\n" + message.text, reply_markup=stop_kb)
         else:
-            await bot.send_message(data.get("target"), "Отправил:\n" + message.text, reply_markup=stop_kb)
+            msg = await bot.send_message(data.get("target"), "Отправил:\n" + message.text, reply_markup=stop_kb)
+
+        if target_data.get("msg_mass"):
+            n_mass = target_data.get("msg_mass")
+            n_mass.append(msg.message_id)
+            n_mass.append(message.message_id)
+            await dp.storage.update_data(chat= data.get("target"), msg_mass = n_mass)
+            await state.update_data(msg_mass = n_mass)
+        else:
+            await dp.storage.update_data(chat=data.get("target"), msg_mass = [msg.message_id, message.message_id])
+            await state.update_data(msg_mass =  [msg.message_id, message.message_id])
+
+
 
     if message.chat.id == data.get("target"):
-        db["chats"].update_one({"_id": data.get("chat_id")}, {
-            "$push": {"msgs": {"from": data.get("target"), "to": data.get("source"), "text": message.text}}})
+        res = db["chats"].update_one({"_id": data.get("chat_id")}, {"$push": {"msgs": {"from": data.get("target"), "to": data.get("source"), "text": message.text}}})
     else:
-        db["chats"].update_one({"_id": data.get("chat_id")}, {
+        res = db["chats"].update_one({"_id": data.get("chat_id")}, {
             "$push": {"msgs": {"from": data.get("source"), "to": data.get("target"), "text": message.text}}})
+        
+  

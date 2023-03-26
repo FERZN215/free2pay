@@ -29,6 +29,17 @@ async def chats_kb_process(call:types.CallbackQuery, state:FSMContext, db:Databa
     data = await state.get_data()
     user = db["users"].find_one({"telegram_id": call.message.chat.id})
     match call.data.replace("_chats", ""):
+
+        case "history":
+            await state.update_data(chat_list = 10, d_history = True)
+            await call.message.edit_reply_markup(my_chats_kb(user["chats"][:11], 10, call.message.chat.id, db, True))
+            return
+
+        case "active":
+            await state.update_data(chat_list = 10, d_history = False)
+            await call.message.edit_reply_markup(my_chats_kb(user["chats"][:11], 10, call.message.chat.id, db))
+            return
+
         case "forward":
             _cur_list = data.get("chat_list") + 10
             _chats = user["chats"][data.get("chat_list"): _cur_list+1]
@@ -43,7 +54,11 @@ async def chats_kb_process(call:types.CallbackQuery, state:FSMContext, db:Databa
             return
         
     await state.update_data(chat_list = _cur_list)
-    await call.message.edit_reply_markup(my_chats_kb(_chats, _cur_list, call.message.chat.id, db))
+
+    if data.get("d_history"):
+        await call.message.edit_reply_markup(my_chats_kb(_chats, _cur_list, call.message.chat.id, db, True))
+    else:
+        await call.message.edit_reply_markup(my_chats_kb(_chats, _cur_list, call.message.chat.id, db))
 
 
 

@@ -1,14 +1,21 @@
 from aiogram.types import  InlineKeyboardMarkup, InlineKeyboardButton
 
-def active_deals_kb(deals, n,send, db):
+from usefull.converters import game_converter
+
+def active_deals_kb(deals, n,send, db, history=False):
     deals_kb = InlineKeyboardMarkup()
     for i in range(len(deals)):
         if i>=10 or i >=len(deals):
             break
         
         deal = db["active_deals"].find_one({"_id":deals[i]})
-        if(deal["status"] == "well done"):
-            continue
+
+        if history:
+            if(deal["status"] != "well done"):
+                continue
+        else:
+            if(deal["status"] == "well done"):
+                continue
 
         if deal["buyer"] == send:
             seller = db["users"].find_one({"telegram_id":deal["seller"]})
@@ -17,7 +24,7 @@ def active_deals_kb(deals, n,send, db):
             buyer = db["users"].find_one({"telegram_id":deal["buyer"]})
             text = "Покупатель" + str(buyer["local_name"]) + "|"
 
-        cur = InlineKeyboardButton(text + converter(deal["game"], deal["category"]) + "|Цена: "+str(deal["cost"])+"|Статус: " + status(deal["status"]), callback_data="active_deal_id:"+str(deal["_id"]))
+        cur = InlineKeyboardButton(text + game_converter(deal["game"], deal["category"]) + "|Цена: "+str(deal["cost"])+"|Статус: " + status(deal["status"]), callback_data="active_deal_id:"+str(deal["_id"]))
         deals_kb.add(cur)
 
 
@@ -42,8 +49,10 @@ def active_deals_kb(deals, n,send, db):
         deals_kb.row(back, forward)
         deals_kb.row(cancel)
     
-
-    deals_kb.add(InlineKeyboardButton("История", callback_data="deals_history"))
+    if history:
+        deals_kb.add(InlineKeyboardButton("Активные", callback_data="active_deals"))
+    else:
+        deals_kb.add(InlineKeyboardButton("История", callback_data="history_deals"))
     return deals_kb
 
 
@@ -101,19 +110,7 @@ def one_active_deal_kb_buyer(status:str, id:str):
 
 
 
-def converter(game:str, type:str)->str:
-    match game:
-        case "game_lage2m":
-            match type:
-                case "cat_accounts":
-                    return "Игра: Lineage 2M|Тип товара: Аккаунты"
-                case "cat_diamonds":
-                    return "Игра: Lineage 2M|Тип товара: Алмазы"
-                case "cat_things":
-                    return "Игра: Lineage 2M|Тип товара: Предметы"
-                case "cat_services":
-                    return "Игра: Lineage 2M|Тип товара: Услуги"
-                
+
 def status(st:str)->str:
     match st:
         case "seller await":

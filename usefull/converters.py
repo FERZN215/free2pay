@@ -77,3 +77,12 @@ def chat_db_conver(game:str):
             return "l2m"
         case _:
             return game
+        
+def status_to_text(status:str)->str:
+    match status:
+        case "deafault":
+            return "Пользователь"
+        case "Banned":
+            return "Забанен"
+        case _:
+            return "Обычный"

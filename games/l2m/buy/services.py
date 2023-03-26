@@ -87,3 +87,9 @@ async def one_service_offer(call:types.CallbackQuery, state:FSMContext, db:Datab
         reply_markup= reply_kb
         
     )
+
+async def delete_services_offer(call:types.CallbackQuery, state:FSMContext, db:Database):
+    data = await state.get_data()
+    db["l2m"].delete_one({"_id":data.get("id")})
+    await call.message.answer("Предложение успешно удалено")
+    await services_out(call,state, db)
