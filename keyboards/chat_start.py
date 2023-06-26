@@ -13,4 +13,4 @@ def source_kb(id):
     return source_kb
 
 
-stop_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(KeyboardButton("Стоп"))
+stop_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(KeyboardButton("Остановить чат"))

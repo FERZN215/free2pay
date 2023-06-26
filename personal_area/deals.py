@@ -6,6 +6,7 @@ from keyboards.deals_kb import active_deals_kb, game_converter, status, one_acti
 from bson.objectid import ObjectId
 from games.l2m.buy.buy import diamond_seller_start, accounts_seller_start, things_seller_start, services_seller_start
 from keyboards.menu import menu_kb
+from reviews.reviews_add import reviews_add
 
 class active_deals_list(StatesGroup):
     deal_list = State()
@@ -123,14 +124,27 @@ async def manage_deal(call:types.CallbackQuery, state:FSMContext, db:Database, b
                                 await call.message.answer("Продавец принял заказ в работу, действуй согласно инструкциям ниже")
 
                         case "buyer_accept":
+                            if offer["status"] != "buyer awaiting":
+                                await call.message.answer("Самса вентиль врог")
+                                await deals_process(call.message, state, db)
+                                return
                             db["users"].update_one({"telegram_id":offer["seller"]}, {"$inc":{"balance":offer["cost"]}})
                             db["active_deals"].update_one({"_id":ObjectId(offer["_id"])}, {"$set":{"status":"well done"}})
                             db["l2m"].delete_one({"_id":offer["offer_id"]})
                             await bot.send_message(offer["seller"], "Покупатель подтвердил выполнение заказа, на ваш баланс зачисленно "+ str(offer["cost"]))
+                            db["users"].update_one({"telegram_id":offer["seller"]}, {"$inc":{"statistics.successful":1}})
                             await call.message.answer("Поздравляем с приобретением!")
+                            await state.update_data(seller_id_r = offer["seller"])
+                            await reviews_add(call, state)
+                            # await deals_process(call.message, state, db)
+                        case "moneyback":
+                            db["users"].update_one({"telegram_id":offer["buyer"]}, {"$inc":{"balance":offer["cost"]}})
+                            db["active_deals"].update_one({"_id":ObjectId(offer["_id"])}, {"$set":{"status":"well done"}})
+                            await bot.send_message(offer["buyer"], "Продавец вернул вам деньги: "+ str(offer["cost"]))
+                            await call.message.answer("Деньги возвращены")
                             await deals_process(call.message, state, db)
-
                         case "report" | "decision":
+                            #ТУТ ДОЛЖНО БЫТЬ db["users"].update_one({"telegram_id":offer["seller"]}, {"$inc":{"statistics.arbitration":1}})
                             await call.message.answer("Пока что не работает, функционал админ панели")
                             await one_active_deal(call, state, db)
                     
@@ -156,11 +170,26 @@ async def manage_deal(call:types.CallbackQuery, state:FSMContext, db:Database, b
                                 await call.message.answer("Продавец принял заказ в работу, действуй согласно инструкциям ниже")
 
                         case "buyer_accept":
+                            if offer["status"] != "buyer awaiting":
+                                await call.message.answer("Самса вентиль врог")
+                                await deals_process(call.message, state, db)
+                                return
                             db["users"].update_one({"telegram_id":offer["seller"]}, {"$inc":{"balance":offer["cost"]}})
                             db["active_deals"].update_one({"_id":ObjectId(offer["_id"])}, {"$set":{"status":"well done"}})
                             db["l2m"].delete_one({"_id":offer["offer_id"]})
                             await bot.send_message(offer["seller"], "Покупатель подтвердил выполнение заказа, на ваш баланс зачисленно "+ str(offer["cost"]))
+                            db["users"].update_one({"telegram_id":offer["seller"]}, {"$inc":{"statistics.successful":1}})
                             await call.message.answer("Поздравляем с приобретением!")
+                            await state.update_data(seller_id_r = offer["seller"])
+                            await reviews_add(call, state)
+                            # await deals_process(call.message, state, db)
+                        case "moneyback":
+                            db["users"].update_one({"telegram_id":offer["buyer"]}, {"$inc":{"balance":offer["cost"]}})
+                            db["active_deals"].update_one({"_id":ObjectId(offer["_id"])}, {"$set":{"status":"well done"}})
+                            # db["users"].update_one({"telegram_id":offer["seller"]}, {"$pull":{"deals":offer["_id"]}})
+                            # db["users"].update_one({"telegram_id":offer["buyer"]}, {"$pull":{"deals":offer["_id"]}})
+                            await bot.send_message(offer["buyer"], "Продавец вернул вам деньги: "+ str(offer["cost"]))
+                            await call.message.answer("Деньги возвращены")
                             await deals_process(call.message, state, db)
 
                         case "report" | "decision":
@@ -190,13 +219,25 @@ async def manage_deal(call:types.CallbackQuery, state:FSMContext, db:Database, b
 
 
                         case "buyer_accept":
+                            if offer["status"] != "buyer awaiting":
+                                await call.message.answer("Самса вентиль врог")
+                                await deals_process(call.message, state, db)
+                                return
                             db["users"].update_one({"telegram_id":offer["seller"]}, {"$inc":{"balance":offer["cost"]}})
                             db["active_deals"].update_one({"_id":ObjectId(offer["_id"])}, {"$set":{"status":"well done"}})
                             db["l2m"].delete_one({"_id":offer["offer_id"]})
                             await bot.send_message(offer["seller"], "Покупатель подтвердил выполнение заказа, на ваш баланс зачисленно "+ str(offer["cost"]))
+                            db["users"].update_one({"telegram_id":offer["seller"]}, {"$inc":{"statistics.successful":1}})
                             await call.message.answer("Поздравляем с приобретением!")
+                            await state.update_data(seller_id_r = offer["seller"])
+                            await reviews_add(call, state)
+                            # await deals_process(call.message, state, db)
+                        case "moneyback":
+                            db["users"].update_one({"telegram_id":offer["buyer"]}, {"$inc":{"balance":offer["cost"]}})
+                            db["active_deals"].update_one({"_id":ObjectId(offer["_id"])}, {"$set":{"status":"well done"}})
+                            await bot.send_message(offer["buyer"], "Продавец вернул вам деньги: "+ str(offer["cost"]))
+                            await call.message.answer("Деньги возвращены")
                             await deals_process(call.message, state, db)
-
                         case "report" | "decision":
                             await call.message.answer("Пока что не работает, функционал админ панели")
                             await one_active_deal(call, state, db)
@@ -214,12 +255,9 @@ async def manage_deal(call:types.CallbackQuery, state:FSMContext, db:Database, b
                                 await call.message.answer("Печально")
                                 await bot.send_message(offer["seller"], "Покупатель отменил заказ")
                                 db['active_deals'].delete_one({"_id": ObjectId(data_mas[0])})
-                                db["users"].update_one({"telegram_id": call.message.chat.id},
-                                                       {"$inc": {"balance": offer["cost"]}})
-                                db['users'].update_one({"telegram_id": call.message.chat.id},
-                                                       {"$pull": {"deals": ObjectId(data_mas[0])}})
-                                db['users'].update_one({"telegram_id": offer["seller"]},
-                                                       {"$pull": {"deals": ObjectId(data_mas[0])}})
+                                db["users"].update_one({"telegram_id": call.message.chat.id},  {"$inc": {"balance": offer["cost"]}})
+                                db['users'].update_one({"telegram_id": call.message.chat.id}, {"$pull": {"deals": ObjectId(data_mas[0])}})
+                                db['users'].update_one({"telegram_id": offer["seller"]}, {"$pull": {"deals": ObjectId(data_mas[0])}})
                                 db["l2m"].update_one({"_id": offer["offer_id"]}, {"$set": {"invis": False}})
                                 await deals_process(call.message, state, db)
                             else:
@@ -227,17 +265,25 @@ async def manage_deal(call:types.CallbackQuery, state:FSMContext, db:Database, b
                                     "Продавец принял заказ в работу, действуй согласно инструкциям ниже")
 
                         case "buyer_accept":
-                            db["users"].update_one({"telegram_id": offer["seller"]},
-                                                   {"$inc": {"balance": offer["cost"]}})
-                            db["active_deals"].update_one({"_id": ObjectId(offer["_id"])},
-                                                          {"$set": {"status": "well done"}})
+                            if offer["status"] != "buyer awaiting":
+                                await call.message.answer("Самса вентиль врог")
+                                await deals_process(call.message, state, db)
+                                return
+                            db["users"].update_one({"telegram_id": offer["seller"]}, {"$inc": {"balance": offer["cost"]}})
+                            db["active_deals"].update_one({"_id": ObjectId(offer["_id"])},{"$set": {"status": "well done"}})
                             db["l2m"].delete_one({"_id": offer["offer_id"]})
-                            await bot.send_message(offer["seller"],
-                                                   "Покупатель подтвердил выполнение заказа, на ваш баланс зачисленно " + str(
-                                                       offer["cost"]))
+                            await bot.send_message(offer["seller"],"Покупатель подтвердил выполнение заказа, на ваш баланс зачисленно " + str(offer["cost"]))
+                            db["users"].update_one({"telegram_id":offer["seller"]}, {"$inc":{"statistics.successful":1}})
                             await call.message.answer("Поздравляем с приобретением!")
+                            await state.update_data(seller_id_r = offer["seller"])
+                            await reviews_add(call, state)
+                            # await deals_process(call.message, state, db)
+                        case "moneyback":
+                            db["users"].update_one({"telegram_id":offer["buyer"]}, {"$inc":{"balance":offer["cost"]}})
+                            db["active_deals"].update_one({"_id":ObjectId(offer["_id"])}, {"$set":{"status":"well done"}})
+                            await bot.send_message(offer["buyer"], "Продавец вернул вам деньги: "+ str(offer["cost"]))
+                            await call.message.answer("Деньги возвращены")
                             await deals_process(call.message, state, db)
-
                         case "report" | "decision":
                             await call.message.answer("Пока что не работает, функционал админ панели")
                             await one_active_deal(call, state, db)

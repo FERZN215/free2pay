@@ -19,11 +19,15 @@ from personal_area.handlers.all_offers_handlers import all_offers_handlers
 
 from balance.b_add import *
 from balance.b_out import *
-
+from aiogram.types import  InlineKeyboardMarkup, InlineKeyboardButton
 
 from start.personal_area import Profile
 
+kbbb = InlineKeyboardMarkup()
+webAppTest = types.WebAppInfo(url = "https://www.google.com")
+btn = types.MenuButtonWebApp("ASS weee can", web_app=webAppTest)
 
+kbbb.add(btn)
 from games.l2m.sell.handlers.services_handlers import services_sell_handlers
 from games.l2m.sell.handlers.diamonds_handler import diamonds_sell_handlers
 from games.l2m.sell.handlers.accounts_handler import accounts_sell_handlers
@@ -80,21 +84,23 @@ async def password_handler(message:types.Message, state:FSMContext):
 
 @dp.message_handler()
 async def menu_handler(message:types.Message, state:FSMContext):
-    match message.text:
-        case "Профиль":
+    match message.text.lower():
+        case "профиль":
             await personal_area(message, db)
-        case "Активные сделки":
+        case "активные сделки":
             await deals_process(message,state, db)
-        case "Купить" | "Продать":
+        case "купить" | "продать":
             await exchange_process(message, state)
-        case "Пополнить":
+        case "пополнить":
             await balance_add_summ(message, state)
-        case "Вывести":
+        case "вывести":
             await balance_out_sum(message, state)
-        case "Мои чаты":
+        case "мои чаты":
             await chats_list(message, state, db)
-        case "Поддержка":
+        case "поддержка":
             await message.answer("Поддерживаю", reply_markup=menu_kb)
+        case "web":
+            await message.answer("Super mega ultra lox, giper mega xuesos", reply_markup=kbbb)
     
 @dp.message_handler(state= balance_out_states.sum_out)
 async def balance_out_process_handler(message:types.Message, state:FSMContext):

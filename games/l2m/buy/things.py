@@ -102,7 +102,7 @@ async def one_thing_offer(call:types.CallbackQuery, state:FSMContext, db:Databas
         "Тип: " + str(things_to_text(product["type"])) + "\n" +
         "Описание: " + str(product["description"]) + "\n" +
         "Цена: " + str(product["cost"]) + "\n" +
-        "Рейтинг: "+str(rat)+"%",
+        "Рейтинг: "+str(round(rat))+"%",
         reply_markup= reply_kb
         
     )

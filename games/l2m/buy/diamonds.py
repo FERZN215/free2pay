@@ -113,7 +113,7 @@ async def one_diamond_offer(call=None, state=None, db=None, msg = None):
             "Количество: " + str(product["name"]) + "\n" +
             "Цена за единицу: " + str(product["cost"]) + "\n" +
             "Комиссия: " + str(com_sw(product["comission"])) + "\n" +
-            "Рейтинг: "+str(rat)+"%",
+            "Рейтинг: "+str(round(rat))+"%",
             reply_markup= reply_kb
             
         )
@@ -123,7 +123,7 @@ async def one_diamond_offer(call=None, state=None, db=None, msg = None):
             "Количество: " + str(product["name"]) + "\n" +
             "Цена за единицу: " + str(product["cost"]) + "\n" +
             "Комиссия: " + str(com_sw(product["comission"])) + "\n" +
-            "Рейтинг: "+str(rat)+"%",
+            "Рейтинг: "+str(round(rat))+"%",
             reply_markup= reply_kb
             
         )

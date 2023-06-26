@@ -25,8 +25,8 @@ async def buy_porcess_start_handler(call:types.CallbackQuery, state:FSMContext, 
     await call.message.delete()
     await services_buy_process(call, state, db, bot)
 
-async def chat_start_handler(call:types.CallbackQuery, state:FSMContext, db:Database, bot:Bot):
-    await chat_start(call, state, db, bot )
+async def chat_start_handler(call:types.CallbackQuery, state:FSMContext, db:Database, dp:Dispatcher,bot:Bot):
+    await chat_start(call, state, db, dp,bot )
 
 async def delete_services_offer_handler(call:types.CallbackQuery, state:FSMContext, db:Database):
     await call.message.delete()
@@ -38,7 +38,7 @@ def services_buy_handler(dp:Dispatcher, dbc:Database, botc:Bot):
     new_account_by_one_handler = partial(services_by_one_handler, db=dbc)
     new_back_buttons_handler = partial(back_buttons_handler, db=dbc)
     new_buy_porcess_start_handler = partial(buy_porcess_start_handler, db = dbc, bot=botc)
-    new_chat_start_handler = partial(chat_start_handler, db=dbc, bot=botc)
+    new_chat_start_handler = partial(chat_start_handler, db=dbc, bot=botc, dp=dp)
     new_delete_diamond_offer_handler = partial(delete_services_offer_handler, db=dbc)
 
     new_view_reviews = partial(view_reviews, db=dbc)

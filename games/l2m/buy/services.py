@@ -83,7 +83,7 @@ async def one_service_offer(call:types.CallbackQuery, state:FSMContext, db:Datab
         "Продавец: " + str(seller["local_name"]) + "\n" +
         "Описание: " + str(product["description"]) + "\n" +
         "Цена: " + str(product["cost"]) + "\n" +
-        "Рейтинг: "+str(rat)+"%",
+        "Рейтинг: "+str(round(rat))+"%",
         reply_markup= reply_kb
         
     )

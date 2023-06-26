@@ -4,7 +4,7 @@ def reviews_kb(reviews, n):
     for i in range(len(reviews)):
         if(i>=10):
             break
-        cur = InlineKeyboardButton("Автор: "+reviews[i]["name"] +"|Оценка: "+ str(reviews[i]["rating"]), callback_data="review_id:"+str(i))
+        cur = InlineKeyboardButton("Дата:"+reviews[i]["date"]+"|Автор: "+reviews[i]["name"] +"|Оценка: "+ str(reviews[i]["rating"]), callback_data="review_id:"+str(i))
         reviews_kb.add(cur)
             
 

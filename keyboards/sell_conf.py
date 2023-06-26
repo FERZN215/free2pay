@@ -4,3 +4,4 @@ post = InlineKeyboardButton('создать предложение', callback_da
 redact = InlineKeyboardButton('изменить', callback_data='sell_redact')
 
 sell_conf_kb = InlineKeyboardMarkup().row(post, redact)
+

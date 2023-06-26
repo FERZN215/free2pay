@@ -21,15 +21,16 @@ async def chats_list_handler(call:types.CallbackQuery, state:FSMContext, db:Data
     await call.message.delete()
     await chats_list(call.message, state, db)
 
-async def start_chat_handler(call:types.CallbackQuery, state:FSMContext, db:Database, bot:Bot):
-    await chat_start(call, state, db, bot)
+async def start_chat_handler(call:types.CallbackQuery, state:FSMContext, db:Database,dp:Dispatcher, bot:Bot):
+    await call.message.delete()
+    await chat_start(call, state, db,dp, bot)
 
 def my_chats_handlers(dp:Dispatcher, dbc:Database, botc:Bot):
 
     new_chats_kb_process_handler = partial(chats_kb_process_handler, db=dbc)
     new_one_chat_handler = partial(one_chat_handler, db = dbc)
     new_chats_list_handler = partial(chats_list_handler, db=dbc )
-    new_start_chat_handler = partial(start_chat_handler, db=dbc, bot=botc)
+    new_start_chat_handler = partial(start_chat_handler, db=dbc, bot=botc, dp=dp)
 
     dp.register_callback_query_handler(new_one_chat_handler, lambda c:c.data.startswith("my_chmat_id:"), state=mychats_states.chat_list)
     dp.register_callback_query_handler(new_chats_kb_process_handler, lambda c:c.data.endswith("_chats"), state =mychats_states.chat_list)

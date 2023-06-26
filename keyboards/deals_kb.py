@@ -78,7 +78,7 @@ def one_active_deal_kb_seller(status:str, id:str):
         case "report":
             decision = InlineKeyboardButton("Посмотреть ответ арбитража", callback_data=str(id)+"_one_decision")
             deal_kb.add(decision)
-    
+    deal_kb.add(InlineKeyboardButton("Вернуть деньги", callback_data=str(id)+"_one_moneyback"))
     deal_kb.add(InlineKeyboardButton("Назад", callback_data="back_from_deals"))
     return deal_kb
         

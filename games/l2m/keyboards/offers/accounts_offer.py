@@ -12,7 +12,7 @@ def offers_kb(posts, n, db, sort="cost"):
         else:
             rat = 0
         seller_name = seller["local_name"]
-        cur = InlineKeyboardButton("Продавец: "+seller_name +"|Класс:"+ ac_t_t(posts[i]["class"]) + "|Уровень: "+str(posts[i]["level"])+"|Цена: "+str(posts[i]["cost"])+"|Рейтинг: "+str(rat)+"%", callback_data="acc_offer_id:"+str(posts[i]["_id"]))
+        cur = InlineKeyboardButton(seller_name +"|Класс:"+ ac_t_t(posts[i]["class"]) + "|Ур: "+str(posts[i]["level"])+"|Цена: "+str(posts[i]["cost"])+"|Рейтинг: "+str(round(rat))+"%", callback_data="acc_offer_id:"+str(posts[i]["_id"]))
         offers_kb.add(cur)
 
     match sort:

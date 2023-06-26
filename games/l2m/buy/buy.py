@@ -6,7 +6,7 @@ from bson.objectid import ObjectId
 
 from aiogram import Bot, Dispatcher
 
-
+from reviews.reviews_add import reviews_add
 
 from keyboards.buy_start import buy_start_kb
 from ..keyboards.thing_sell_type import thing_sell_type_kb, au_buyer_kb
@@ -71,12 +71,13 @@ async def diamond_seller_start(call:types.CallbackQuery, state:FSMContext, db:Da
         case "yes":
             if not n:
                 await state.update_data(prev_state = await state.get_state())
+
             await buy_list.seller_ready.set()
             await state.update_data(cur_offer_id = ObjectId(data_mas[0]))
 
             db["l2m"].update_one({"_id":offer["offer_id"]}, {"$inc":{"name":-int(offer["count"])}})
             db["active_deals"].update_one({"_id":ObjectId(data_mas[0])}, {"$set":{"status":"seller accepted"}})
-
+            db["users"].update_one({"telegram_id":call.message.chat.id}, {"$inc":{"statistics.total":1}})
             await bot.send_message(offer["buyer"], "Продавец принял заказ в работу, скоро придет его ответ")
             await call.message.answer("Напиши сколько лотов требуется выставить покупателю для покупки "+str(offer["count"])+" алмазов, а также их цену\nПример:\n4 лота(150, 600, 350, 100)\nЛибо:\n1 лот(1200)")
 
@@ -98,10 +99,12 @@ async def diamond_get_lots(message:types.Message, state:FSMContext, db:Database,
     db["active_deals"].update_one({"_id":data.get("cur_offer_id")}, {"$set":{"status":"buyer awaiting"}})
     await message.reply("Сообщение отправлено покупателю, после выкупа вами всех лотов покупатель должен подтвердить получение. Если вам кажется, что покупатель специально не подтверждает получение, то можно перейти в раздел 'Активные сделки' и попытаться решить проблему в чате, в противном случае открыть арбитраж")
     try:
-
-        await state.set_state(data.get("prev_state"))
-        await state.update_data(prev_state = None)
-    except ...:
+        if data.get("prev_state"):
+            await state.set_state(data.get("prev_state"))
+            await state.update_data(prev_state = None)
+        else:
+            await state.finish()
+    except:
         print("no state")
     await bot.send_message(offer["buyer"],"Продавец просит выставить:\n" + message.text + "\nПосле того как продавец выкупит все лоты, <b>ОБЯЗАТЕЛЬНО</b> перейди в раздел 'Активные сделки' и подтверди получение!",parse_mode='HTML')
 
@@ -133,15 +136,26 @@ async def accounts_seller_start(call:types.CallbackQuery, state:FSMContext, db:D
     except TypeError:
         await call.message.answer("Заказ отменен")
         return
+    
+    if await state.get_state() == "buy_list:login_input":
+        await call.message.answer("SMTH went wrong")
+        return
+    
+    if offer["status"] == "buyer awaiting":
+        await call.message.answer("SMTH went wrong")
+        return
+
 
     match data_mas[2]:
         case "yes":
             if not n:
+                
                 await state.update_data(prev_state = await state.get_state())
 
             
             await state.update_data(cur_offer_id = ObjectId(data_mas[0]))
             db["active_deals"].update_one({"_id":ObjectId(data_mas[0])}, {"$set":{"status":"seller accepted"}})
+            db["users"].update_one({"telegram_id":call.message.chat.id}, {"$inc":{"statistics.total":1}})
             await bot.send_message(offer["buyer"], "Продавец принял заказ в работу, скоро придет его ответ")
             await call.message.answer("Напиши логин для аккаунта:")
             await buy_list.login_input.set()
@@ -155,7 +169,7 @@ async def accounts_seller_start(call:types.CallbackQuery, state:FSMContext, db:D
             
             db['active_deals'].delete_one({"_id":ObjectId(data_mas[0])})
             db['users'].update_one({"telegram_id":call.message.chat.id}, {"$pull":{"deals":ObjectId(data_mas[0])}, "$inc":{"balance":offer["cost"]}})
-            db['users'].update_one({"telegram_id":offer["buyer"]}, {"$pull":{ObjectId(data_mas[0])}})
+            db['users'].update_one({"telegram_id":offer["buyer"]}, {"$pull":{"deals":ObjectId(data_mas[0])}})
   
 async def accounts_get_login(message:types.Message, state:FSMContext):
     await state.update_data(login = message.text)
@@ -168,9 +182,12 @@ async def accounts_get_password(message:types.Message, state:FSMContext, db:Data
     db["active_deals"].update_one({"_id":data.get("cur_offer_id")}, {"$set":{"status":"buyer awaiting"}})
     await message.reply("Данные отправлены покупателю. Если вам кажется, что покупатель специально не подтверждает получение, то можно перейти в раздел 'Активные сделки' и попытаться решить проблему в чате, в противном случае открыть арбитраж")
     try:
-        await state.set_state(data.get("prev_state"))
-        await state.update_data(prev_state = None)
-    except ...:
+        if data.get("prev_state"):
+            await state.set_state(data.get("prev_state"))
+            await state.update_data(prev_state = None)
+        else:
+            await state.finish()
+    except:
         print("no state")
     db["active_deals"].update_one({"_id": offer["_id"]}, {"$set": {"login": data.get("login")}})
     await bot.send_message(offer["buyer"],"Логин: " + data.get("login") + "\nПароль: "+ message.text + 
@@ -180,8 +197,12 @@ async def accounts_verification_code_awaiting(call:types.CallbackQuery, state:FS
     
     try:
         offer = db["active_deals"].find_one({"_id": ObjectId(call.data.replace("buyer_code_query:", ""))})
-    except ...:
+    except:
         await call.message.answer("Заказ заверешен")
+
+    if offer["status"] != "buyer awaiting":
+        await call.message.answer("Самса вентиль врог")
+        return
 
     if await dp.storage.get_state(chat=offer["seller"]) == buy_list.verification_code:
         await call.message.reply("Повтори попытку немного попозже, продавец отправляет код другому покупателю", reply_markup=access_code(offer["_id"]))
@@ -197,9 +218,11 @@ async def accounts_verification_code_from_seller(message:types.Message, state:FS
     await message.reply("Отправлено")
     offer = db["active_deals"].find_one({"_id": ObjectId(data.get("buyer_code_id"))})
     await bot.send_message(offer["buyer"], "Продавец отправил код от аккаунта: "+str(offer["login"])+"\nПроверьте и подтвердите выполнение сделки:\n<b>"+ message.text+"</b>", parse_mode='HTML', reply_markup=access_code(offer["_id"]))
-    await state.set_state(data.get("prev_state"))
-    await state.update_data(prev_state = None)
-
+    if data.get("prev_state"):
+        await state.set_state(data.get("prev_state"))
+        await state.update_data(prev_state = None)
+    else:
+        await state.finish()
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -224,7 +247,7 @@ async def things_seller_start(call:types.CallbackQuery, state:FSMContext, db:Dat
         data_mas = call.data.partition("_one_")
     else:
         data_mas = call.data.partition("_buy_things_start_")
-    print(data_mas)
+    
     try:
         offer = db['active_deals'].find_one({"_id":ObjectId(data_mas[0])})
     except TypeError:
@@ -240,7 +263,7 @@ async def things_seller_start(call:types.CallbackQuery, state:FSMContext, db:Dat
             await state.update_data(cur_offer_id = ObjectId(data_mas[0]))
             db["active_deals"].update_one({"_id":ObjectId(data_mas[0])}, {"$set":{"status":"seller accepted"}})
             await bot.send_message(offer["buyer"], "Продавец принял заказ в работу, скоро придет его ответ")
-
+            db["users"].update_one({"telegram_id":call.message.chat.id}, {"$inc":{"statistics.total":1}})
            
             await call.message.answer("Выбери тип продажи предмета:", reply_markup=thing_sell_type_kb)
             await buy_list.thing_sell_type.set()
@@ -262,7 +285,7 @@ async def thing_sell_type_process(call:types.CallbackQuery, state:FSMContext, db
     data = await state.get_data()
     try:
         offer = db["active_deals"].find_one({"_id":ObjectId(data.get("cur_offer_id"))})
-    except ...:
+    except:
         await call.message.answer("Сделка завершена")
         return
 
@@ -275,8 +298,11 @@ async def thing_sell_type_process(call:types.CallbackQuery, state:FSMContext, db
             await call.message.answer("Введи цену за которую ты выставишь предмет:")
         case "trade":
             await call.message.answer("Подождем подтверждения от покупателя, что он имеет 50+ уровень и 100 аламазов")
-            await state.set_state(data.get("prev_state"))
-            await state.update_data(prev_state = None)
+            if data.get("prev_state"):
+                await state.set_state(data.get("prev_state"))
+                await state.update_data(prev_state = None)
+            else:
+                await state.finish()
             await bot.send_message(offer["buyer"], "Продавец предлагает купить предмет с помошью трейда. Для этого вам нужно иметь 50+ уровень и 100 алмазов", reply_markup=au_buyer_kb(offer["_id"]))
 
 
@@ -285,8 +311,11 @@ async def au_cost(message:types.Message, state:FSMContext, db:Database, bot:Bot)
     offer = db["active_deals"].find_one({"_id":data.get("cur_offer_id")})
     if not is_digit(message.text):
         await message.reply("Цену нужно вводить цифрой")
-    await state.set_state(data.get("prev_state"))
-    await state.update_data(prev_state = None)
+    if data.get("prev_state"):
+        await state.set_state(data.get("prev_state"))
+        await state.update_data(prev_state = None)
+    else:
+        await state.finish()
     db["active_deals"].update_one({"_id":data.get("cur_offer_id")}, {"$set":{"status": "buyer awaiting"}})
     await bot.send_message(offer["buyer"], "Продавец выставит предмет за цену: <b>"+message.text+"</b>"+". После того как ты выкупишь товар не забудь завершить сделку в разделе активные сделки", parse_mode='HTML')
     await message.reply("Отправлено")
@@ -297,7 +326,7 @@ async def bueyr_trade_thing(call:types.CallbackQuery, state:Database, db:Databas
     data_mas = call.data.partition("_buyer_au_")
     try:
         offer = db["active_deals"].find_one({"_id":ObjectId(data_mas[0])})
-    except ...:
+    except:
         await call.message.answer("Заказ отменен")
     
     match data_mas[2]:
@@ -322,8 +351,11 @@ async def trade_desc(message:types.Message, state:FSMContext, db:Database, bot:B
     db["active_deals"].update_one({"_id":offer["_id"]}, {"$set":{"status":"buyer awaiting"}})
     await bot.send_message(offer["buyer"], "Продавец отправил описание трейда:\n"+message.text+"\nПосле завершения трейда обязательно подтверди сделку из раздела активных сделок")
     await message.answer("Описание отправлено")
-    await state.set_state(data.get("prev_state"))
-    await state.update_data(prev_state = None)
+    if data.get("prev_state"):
+        await state.set_state(data.get("prev_state"))
+        await state.update_data(prev_state = None)
+    else:
+        await state.finish()
 
 
 # ----------------------------------------------------------------------------------------------------------------------------------------
@@ -335,10 +367,7 @@ async def services_buy_process(call:types.CallbackQuery, state:FSMContext, db:Da
     info = await buy_process_start_com(call, state, db)
     
 
-    await bot.send_message(info["offer"]["seller"], "У вас хотят заказать услугу\nСтоимость: " + str(info["offer"]["cost"])+"\n" + game_converter(info["offer"]["game"], info["offer"]["pr_type"])+
-                           "\n"+server_converter(info["offer"]["server"])+"\n"+under_server_converter(info["offer"]["under_server"])+
-                           "\nНазвание: "+str(info["offer"]["name"])+"\nОписание: "+str(info["offer"]["description"])+
-                           "\nПосле завершения вы сможете продолжить ваши дела", reply_markup=buy_start_kb(info["active_deal"]["_id"], "services"))
+    await bot.send_message(info["offer"]["seller"], "У вас хотят заказать услугу\nСтоимость: " + str(info["offer"]["cost"])+"\n" + game_converter(info["offer"]["game"], info["offer"]["pr_type"])+"\n"+server_converter(info["offer"]["server"])+"\n"+under_server_converter(info["offer"]["under_server"])+"\nНазвание: "+str(info["offer"]["name"])+"\nОписание: "+str(info["offer"]["description"])+"\nПосле завершения вы сможете продолжить ваши дела", reply_markup=buy_start_kb(info["active_deal"]["_id"], "services"))
     await state.finish()
 
 async def services_seller_start(call:types.CallbackQuery, state:FSMContext, db:Database, bot:Bot, n = False):
@@ -362,6 +391,7 @@ async def services_seller_start(call:types.CallbackQuery, state:FSMContext, db:D
             await state.update_data(cur_offer_id = ObjectId(data_mas[0]))
             db["active_deals"].update_one({"_id":ObjectId(data_mas[0])}, {"$set":{"status":"seller accepted"}})
             await bot.send_message(offer["buyer"], "Продавец принял заказ в работу, скоро придет его ответ")
+            db["users"].update_one({"telegram_id":call.message.chat.id}, {"$inc":{"statistics.total":1}})
             await call.message.answer("Напишите подробно об услуге и инструкцию покупателю, которую вы можете предоставить:")
             await buy_list.service_instruction.set()
         case "later":
@@ -385,9 +415,12 @@ async def services_get_instruction(message:types.Message, state:FSMContext, db:D
     db["active_deals"].update_one({"_id":data.get("cur_offer_id")}, {"$set":{"status":"buyer awaiting"}})
     await message.reply("Инструкции отправлены покупателю. Если вам кажется, что покупатель специально не подтверждает получение, то можно перейти в раздел 'Активные сделки' и попытаться решить проблему в чате, в противном случае открыть арбитраж")
     try:
-        await state.set_state(data.get("prev_state"))
-        await state.update_data(prev_state = None)
-    except ...:
+        if data.get("prev_state"):
+            await state.set_state(data.get("prev_state"))
+            await state.update_data(prev_state = None)
+        else:
+            await state.finish()
+    except:
         print("no state")
     db["active_deals"].update_one({"_id": offer["_id"]}, {"$set": {"instruction": message.text}})
     await bot.send_message(offer["buyer"],"Инструкция от продавца: " + message.text + 
@@ -421,17 +454,27 @@ async def buy_process_start_com(call:types.CallbackQuery, state:FSMContext, db:D
 async def buyer_accept(call:types.CallbackQuery, state:FSMContext, db:Database, bot:Bot):
     try:
         offer = db["active_deals"].find_one({"_id":ObjectId(call.data.replace("buyer_accept:", ""))})
-    except ...:
+    except:
         await call.message.answer("Сделка уже завершена")
         return
 
+    if offer["status"] != "buyer awaiting":
+       
+        await call.message.answer("Самсинг вент вронг(")
+        return
+    
     db["users"].update_one({"telegram_id":offer["seller"]}, {"$inc":{"balance":offer["cost"]}})
     db["active_deals"].update_one({"_id":ObjectId(offer["_id"])}, {"$set":{"status":"well done"}})
     db["l2m"].delete_one({"_id":offer["offer_id"]})
 
+    db["users"].update_one({"telegram_id":offer["seller"]}, {"$inc":{"statistics.successful":1}})
+
     await bot.send_message(offer["seller"], "Покупатель подтвердил выполнение заказа, на ваш баланс зачисленно "+ str(offer["cost"]))
     await call.message.answer("Поздравляем с приобретением!")
-    await state.finish()
+    await state.update_data(seller_id_r = offer["seller"])
+    await reviews_add(call, state)
+
+    #await state.finish()
 
 async def buy_process(call:types.CallbackQuery, state:FSMContext, db:Database):
     # await buy_list.buy_start.set()

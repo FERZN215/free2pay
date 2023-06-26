@@ -27,8 +27,8 @@ async def back_buttons_handler(call:types.CallbackQuery, state:FSMContext, db:Da
     await state.update_data(id = None)
     await things_out(call, state, db)
 
-async def chat_start_handler(call:types.CallbackQuery, state:FSMContext, db:Database, bot:Bot):
-    await chat_start(call, state, db, bot )
+async def chat_start_handler(call:types.CallbackQuery, state:FSMContext, db:Database,dp:Dispatcher, bot:Bot):
+    await chat_start(call, state, db, dp,bot )
 
 async def delete_things_offer_handler(call:types.CallbackQuery, state:FSMContext, db:Database):
     await call.message.delete()
@@ -39,7 +39,7 @@ def things_buy_handler(dp:Dispatcher, dbc:Database, botc:Bot):
     new_things_by_one_handler = partial(things_by_one_handler, db=dbc)
     new_back_buttons_handler = partial(back_buttons_handler, db=dbc)
     new_buy_porcess_start_handler = partial(buy_porcess_start_handler, db = dbc, bot=botc)
-    new_chat_start_handler = partial(chat_start_handler, db=dbc, bot=botc)
+    new_chat_start_handler = partial(chat_start_handler, db=dbc, bot=botc, dp=dp)
     new_delete_diamond_offer_handler = partial(delete_things_offer_handler, db=dbc)
 
 

@@ -76,8 +76,12 @@ async def one_chat(call:types.CallbackQuery, state:FSMContext, db:Database):
         
             if msg["from"] == target["telegram_id"]:
                 text+="От: "+ target["local_name"] + "\n" + "Кому: " + source["local_name"] + "\nТекст:"
-            else:
+            elif msg["from"] == source["telegram_id"]:
                 text+="От: "+ source["local_name"] + "\n" + "Кому: " + target["local_name"] + "\nТекст:"
+            else:
+                adm = db["users"].find_one({"telegram_id":msg["from"]})
+                text+="От: "+ adm["local_name"] + " (Администратор)\n" + "\nТекст:"
+
             
             
             text += msg["text"] + "\n---------------\n"

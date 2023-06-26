@@ -73,6 +73,6 @@ async def review_kb_process(call:types.CallbackQuery, state:FSMContext, db:Datab
 async def view_one_review(call:types.CallbackQuery, state:FSMContext, db:Database):
     data = await state.get_data()
     user = db["users"].find_one({"telegram_id": (db[chat_db_conver(data.get("game"))].find_one({"_id": data.get("id")}))["seller"]})
-    await call.message.answer("Автор: "+ str(user["reviews"][int(call.data.replace("review_id:", ""))]["name"]) + 
+    await call.message.answer("Дата: "+str(user["reviews"][int(call.data.replace("review_id:", ""))]["date"]) +"\nАвтор: "+ str(user["reviews"][int(call.data.replace("review_id:", ""))]["name"]) + 
                               "\nОценка: " + str(user["reviews"][int(call.data.replace("review_id:", ""))]["rating"]) + 
                               "\nТекст: "+ str(user["reviews"][int(call.data.replace("review_id:", ""))]["description"]), reply_markup=back_kb)

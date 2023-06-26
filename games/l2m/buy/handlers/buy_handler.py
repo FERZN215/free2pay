@@ -94,8 +94,8 @@ async def buy_cancel_handler(call:types.CallbackQuery, state:FSMContext, db:Data
     await buy_cancel(call, state, db)
 
 
-async def chat_start_handler(call:types.CallbackQuery, state:FSMContext, db:Database, bot:Bot):
-    await chat_start(call, state, db, bot)
+async def chat_start_handler(call:types.CallbackQuery, state:FSMContext, db:Database,dp:Dispatcher, bot:Bot):
+    await chat_start(call, state, db,dp, bot)
 
 
 def buy_handlers(dpc:Dispatcher, dbc:Database, botc:Bot):
@@ -145,7 +145,7 @@ def buy_handlers(dpc:Dispatcher, dbc:Database, botc:Bot):
     dpc.register_callback_query_handler(new_service_seller_start_handler, lambda c: "_buy_services_start_" in c.data, state="*")
     dpc.register_message_handler(new_service_get_instructions_handler, state=buy_list.service_instruction)
 
-    new_chat_start_handler = partial(chat_start_handler, db=dbc, bot=botc)
+    new_chat_start_handler = partial(chat_start_handler, db=dbc, bot=botc, dp=dpc)
     dpc.register_callback_query_handler(new_chat_start_handler, lambda c: c.data.startswith("buyer_chat:"), state="*")
 
     new_balance_add_process_handler = partial(balance_add_process_handler, db=dbc)
