@@ -32,6 +32,14 @@ async def delete_services_offer_handler(call:types.CallbackQuery, state:FSMConte
     await call.message.delete()
     await delete_services_offer(call, state, db)
 
+async def service_seller_start_handler(call:types.CallbackQuery, state:FSMContext, db:Database, bot:Bot):
+    await call.message.delete()
+    await services_seller_start(call, state, db, bot)
+
+async def service_get_instructions_handler(message:types.Message, state:FSMContext,  db:Database, bot:Bot):
+    await services_get_instruction(message, state, db, bot)
+
+
 
 def services_buy_handler(dp:Dispatcher, dbc:Database, botc:Bot):
     new_accounts_kb_handler = partial(services_kb_handler, db=dbc)
@@ -40,6 +48,12 @@ def services_buy_handler(dp:Dispatcher, dbc:Database, botc:Bot):
     new_buy_porcess_start_handler = partial(buy_porcess_start_handler, db = dbc, bot=botc)
     new_chat_start_handler = partial(chat_start_handler, db=dbc, bot=botc, dp=dp)
     new_delete_diamond_offer_handler = partial(delete_services_offer_handler, db=dbc)
+    new_service_seller_start_handler = partial(service_seller_start_handler, db=dbc, bot=botc)
+    new_service_get_instructions_handler = partial(service_get_instructions_handler, db= dbc, bot=botc)
+
+    dp.register_callback_query_handler(new_service_seller_start_handler, lambda c: "_buy_services_start_" in c.data, state="*")
+    dp.register_message_handler(new_service_get_instructions_handler, state=buy_list.service_instruction)
+
 
     new_view_reviews = partial(view_reviews, db=dbc)
     dp.register_callback_query_handler(new_view_reviews, lambda c:c.data=="buyer_reviews", state=services_list.id)

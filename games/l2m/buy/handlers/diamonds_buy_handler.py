@@ -22,7 +22,14 @@ async def buy_start_handler(call:types.CallbackQuery, state:FSMContext):
 async def count_process_handler(message:types.Message, state:FSMContext, db:Database):
     await diamonds_count_process(message, state, db)
 
+#buy
+async def diamond_seller_start_handler(call:types.CallbackQuery, state:FSMContext, db:Database, bot:Bot):
+    await call.message.delete()
+    await diamond_seller_start(call, state, db, bot)
 
+async def diamond_get_lots_handler(message:types.Message, state:FSMContext, db:Database, bot:Bot):
+    await diamond_get_lots(message, state, db, bot)
+#buy
 
 async def change_diamond_count_start_handler(call:types.CallbackQuery, state:FSMContext):
     await call.message.delete()
@@ -59,6 +66,11 @@ def diamonds_buy_handlers(dp: Dispatcher, dbc:Database, botc):
     new_buy_porcess_start_handler = partial(buy_porcess_start_handler, db=dbc, bot=botc)
     new_chat_start_handler = partial(chat_start_handler, db=dbc, bot=botc, dp=dp)
     new_view_reviews = partial(view_reviews, db=dbc)
+    new_diamond_seller_start_handler = partial(diamond_seller_start_handler, db=dbc, bot=botc )
+    new_diamond_get_lots_handler = partial(diamond_get_lots_handler, db=dbc, bot=botc )
+
+    dp.register_callback_query_handler(new_diamond_seller_start_handler, lambda c: "_buy_diamonds_start_" in c.data, state="*")
+    dp.register_message_handler(new_diamond_get_lots_handler, state=buy_list.seller_ready)
 
     dp.register_callback_query_handler(new_view_reviews, lambda c:c.data=="buyer_reviews", state=diamonds_list.id)
     
