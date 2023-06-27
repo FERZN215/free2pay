@@ -9,7 +9,7 @@ from ..keyboards.diamond_seller_kb import diamonds_seller_kb
 from ..keyboards.buyer_kb import buyer_kb
 from ..keyboards.diamonds_buy import diamond_buy_kb
 from keyboards.menu import menu_kb
-from buy import buy_list
+from buy import *
 
 class diamonds_list(StatesGroup):
     cur_list = State()
