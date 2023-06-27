@@ -22,9 +22,9 @@ from balance.b_out import *
 from aiogram.types import  InlineKeyboardMarkup, InlineKeyboardButton
 
 from start.personal_area import Profile
-
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 kbbb = InlineKeyboardMarkup()
-webAppTest = types.WebAppInfo(url = "https://www.google.com")
+webAppTest = types.WebAppInfo(url = "https://serene-capybara-913481.netlify.app/#/main?id=LOX")
 btn = types.MenuButtonWebApp("ASS weee can", web_app=webAppTest)
 
 kbbb.add(btn)
