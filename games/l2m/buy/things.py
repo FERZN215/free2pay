@@ -9,7 +9,8 @@ from ..keyboards.buyer_kb import buyer_kb
 from usefull.converters import things_to_text
 from keyboards.menu import menu_kb
 from ..keyboards.l2m_things import l2m_things_cat
-from buy import *
+from .buy import *
+from usefull.list_in_app import web_kb
 
 class things_list(StatesGroup):
     cur_list = State()
@@ -157,7 +158,7 @@ async def things_out(call:types.CallbackQuery, state:FSMContext, db:Database):
    
 
     if len(offers) > 0:
-        await call.message.answer("Вот все наши предложения: ",reply_markup=offers_kb(offers, 10, db))
+        await call.message.answer("Вот все наши предложения: ",reply_markup=web_kb(data))
     else:
         await state.finish()
         await call.message.answer("В данном разделе отсутсвуют товары", reply_markup=menu_kb)

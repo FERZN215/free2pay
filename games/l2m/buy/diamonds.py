@@ -9,7 +9,8 @@ from ..keyboards.diamond_seller_kb import diamonds_seller_kb
 from ..keyboards.buyer_kb import buyer_kb
 from ..keyboards.diamonds_buy import diamond_buy_kb
 from keyboards.menu import menu_kb
-from buy import *
+from .buy import *
+from usefull.list_in_app import web_kb
 
 class diamonds_list(StatesGroup):
     cur_list = State()
@@ -31,7 +32,7 @@ async def diamonds_out(call:types.CallbackQuery, state:FSMContext, db:Database):
     await state.update_data(sort = "cost")
 
     if len(offers) > 0:
-        await call.message.answer("Вот все наши предложения: ",reply_markup=offers_kb(offers, 10, db))
+        await call.message.answer("Вот все наши предложения: ",reply_markup=web_kb(data))
     else:
         await state.finish()
         await call.message.answer("В данном разделе отсутсвуют товары", reply_markup=menu_kb)

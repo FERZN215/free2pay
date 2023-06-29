@@ -8,7 +8,8 @@ from ..keyboards.seller_kb import seller_kb
 from ..keyboards.buyer_kb import buyer_kb
 from keyboards.menu import menu_kb
 from ..keyboards.l2m_acc_cat import l2m_account_cat
-from buy import *
+from .buy import *
+from usefull.list_in_app import web_kb
 
 from usefull.converters import ac_t_t
 
@@ -28,9 +29,9 @@ async def accounts_out(call:types.CallbackQuery, state:FSMContext, db:Database):
     await accounts_list.cur_list.set()
     await state.update_data(cur_list = 10)
     await state.update_data(sort = "cost")
-
+    # тут можно дату передавать в юзфул функцию
     if len(offers) > 0:
-        await call.message.answer("Вот все наши предложения: ",reply_markup=offers_kb(offers, 10, db))
+        await call.message.answer("Вот все наши предложения: ",reply_markup=web_kb(data))
     else:
         await state.finish()
         await call.message.answer("В данном разделе отсутсвуют товары", reply_markup=menu_kb)
