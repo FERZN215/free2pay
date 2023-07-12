@@ -19,15 +19,11 @@ from personal_area.handlers.all_offers_handlers import all_offers_handlers
 
 from balance.b_add import *
 from balance.b_out import *
-from aiogram.types import  InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import  ReplyKeyboardMarkup
 
 from start.personal_area import Profile
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-kbbb = InlineKeyboardMarkup()
-webAppTest = types.WebAppInfo(url = "https://serene-capybara-913481.netlify.app/#/main?id=LOX")
-btn = types.MenuButtonWebApp("ASS weee can", web_app=webAppTest)
 
-kbbb.add(btn)
 from games.l2m.sell.handlers.services_handlers import services_sell_handlers
 from games.l2m.sell.handlers.diamonds_handler import diamonds_sell_handlers
 from games.l2m.sell.handlers.accounts_handler import accounts_sell_handlers
@@ -74,6 +70,9 @@ async def license_agreement_handler(call: types.CallbackQuery):
     await license_agreement_process(call, db)
     await call.message.delete()
 
+
+
+
 @dp.message_handler(state= registration_states.nickname)
 async def nickname_handler(message:types.Message, state:FSMContext):
     await password(message, state)
@@ -82,8 +81,14 @@ async def nickname_handler(message:types.Message, state:FSMContext):
 async def password_handler(message:types.Message, state:FSMContext):
     await password_process(message, state, db)
 
+@dp.message_handler(content_types=['web_app_data'])
+async def web_app(message:types.Message):
+    print(1)
+    await message.answer(message.web_app_data.data)
+
 @dp.message_handler()
 async def menu_handler(message:types.Message, state:FSMContext):
+
     match message.text.lower():
         case "профиль":
             await personal_area(message, db)
@@ -98,9 +103,9 @@ async def menu_handler(message:types.Message, state:FSMContext):
         case "мои чаты":
             await chats_list(message, state, db)
         case "поддержка":
+            
             await message.answer("Поддерживаю", reply_markup=menu_kb)
-        case "web":
-            await message.answer("Super mega ultra lox, giper mega xuesos", reply_markup=kbbb)
+       
     
 @dp.message_handler(state= balance_out_states.sum_out)
 async def balance_out_process_handler(message:types.Message, state:FSMContext):
