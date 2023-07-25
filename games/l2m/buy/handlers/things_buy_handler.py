@@ -7,7 +7,7 @@ from functools import partial
 from chat.chat import chat_start
 
 from ..things import *
-from ..buy import things_buy_process
+
 from reviews.reviews import view_reviews
 
 

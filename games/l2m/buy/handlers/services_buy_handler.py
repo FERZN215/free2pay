@@ -6,7 +6,7 @@ from functools import partial
 
 from chat.chat import chat_start
 from ..services import *
-from ..buy import services_buy_process
+
 from reviews.reviews import view_reviews
 
 async def services_kb_handler(call:types.CallbackQuery, state:FSMContext, db:Database):

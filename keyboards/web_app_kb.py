@@ -1,5 +1,5 @@
 from aiogram import types
-from aiogram.types import ReplyKeyboardMarkup
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 def web_kb(data):
     param_kb = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -8,6 +8,7 @@ def web_kb(data):
                                  +"&server="+str(data.get("server"))
                                  +"&under_server="+str(data.get("under_server")))
     btn = types.MenuButtonWebApp("Предложения", web_app=param_url)
-    param_kb.add(btn)
-    
+    btn1 = KeyboardButton("В главное меню")
+    param_kb.add(btn, btn1)
+    print(param_url)
     return param_kb

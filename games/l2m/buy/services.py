@@ -25,6 +25,7 @@ async def services_out(call:types.CallbackQuery, state:FSMContext, db:Database):
    
 
     if len(offers) > 0:
+        await state.finish()
         await call.message.answer("Вот все наши предложения: ",reply_markup=web_kb(data))
     else:
         await state.finish()
@@ -127,38 +128,61 @@ async def services_kb_pr(call:types.CallbackQuery, state:FSMContext, db:Database
     await state.update_data(cur_list = _cur_list)
     await call.message.edit_reply_markup(offers_kb(offers, _cur_list, db))
 
-
-async def one_service_offer(call:types.CallbackQuery, state:FSMContext, db:Database, rev = False):
+import json
+async def one_service_offer(call:types.CallbackQuery, state:FSMContext, db:Database, rev = False, web = False):
     if not rev:
         cur_id = ObjectId(call.data.replace("ser_offer_id:", ""))
+    elif web:
+        data = json.loads(web.web_app_data.data)
+        cur_id = ObjectId(data['id'])
     else:
         data = await state.get_data()
         cur_id = data.get("id")
         
     await services_list.id.set()
-    await state.update_data(id = cur_id)
+    
+    await state.update_data(id = cur_id, game = data['game'] , game_type = data['category'], server = data['server'], under_server = data['under_server'])
     product = db["l2m"].find_one({"_id":cur_id})
     seller = db["users"].find_one({"telegram_id":product["seller"]})
-    if call.message.chat.id == product["seller"]:
-        reply_kb = seller_kb
+    if not web:
+        if call.message.chat.id == product["seller"]:
+            reply_kb = seller_kb
+        else:
+            reply_kb = buyer_kb
     else:
-        reply_kb = buyer_kb
+        if web.chat.id == product["seller"]:
+            reply_kb = seller_kb
+        else:
+            reply_kb = buyer_kb
+
 
     if seller["statistics"]["total"] >0:
         rat = seller["statistics"]["successful"] / (seller["statistics"]["total"]/100)
     else:
         rat = 0
-    await call.message.answer(
-        "Продавец: " + str(seller["local_name"]) + "\n" +
-        "Описание: " + str(product["description"]) + "\n" +
-        "Цена: " + str(product["cost"]) + "\n" +
-        "Рейтинг: "+str(round(rat))+"%",
-        reply_markup= reply_kb
-        
-    )
+
+    if not web:
+        await call.message.answer(
+            "Продавец: " + str(seller["local_name"]) + "\n" +
+            "Описание: " + str(product["description"]) + "\n" +
+            "Цена: " + str(product["cost"]) + "\n" +
+            "Рейтинг: "+str(round(rat))+"%",
+            reply_markup= reply_kb
+            
+        )
+    else:
+        await web.answer(
+            "Продавец: " + str(seller["local_name"]) + "\n" +
+            "Описание: " + str(product["description"]) + "\n" +
+            "Цена: " + str(product["cost"]) + "\n" +
+            "Рейтинг: "+str(round(rat))+"%",
+            reply_markup= reply_kb
+            
+        )
 
 async def delete_services_offer(call:types.CallbackQuery, state:FSMContext, db:Database):
     data = await state.get_data()
     db["l2m"].delete_one({"_id":data.get("id")})
     await call.message.answer("Предложение успешно удалено")
     await services_out(call,state, db)
+    

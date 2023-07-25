@@ -7,7 +7,7 @@ from chat.chat import chat_start
 
 from ..accounts import *
 
-from ..buy import accounts_buy_process
+
 from reviews.reviews import view_reviews
 
 

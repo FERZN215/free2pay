@@ -32,6 +32,7 @@ async def diamonds_out(call:types.CallbackQuery, state:FSMContext, db:Database):
     await state.update_data(sort = "cost")
 
     if len(offers) > 0:
+        await state.finish()
         await call.message.answer("Вот все наши предложения: ",reply_markup=web_kb(data))
     else:
         await state.finish()
@@ -79,11 +80,15 @@ async def diamonds_kb_pr(call:types.CallbackQuery, state:FSMContext, db:Database
     await state.update_data(cur_list = _cur_list)
     await call.message.edit_reply_markup(offers_kb(offers, _cur_list, db, sort_by))
 
-
+import json
 async def one_diamond_offer(call=None, state=None, db=None, msg = None):
     if msg == None:
         cur_id = ObjectId(call.data.replace("dia_offer_id:", ""))
         await state.update_data(id = cur_id)
+    elif msg.web_app_data.data:
+        data = json.loads(msg.web_app_data.data)
+        cur_id = ObjectId(data['id'])
+        await state.update_data(id = cur_id, game = data['game'] , game_type = data['category'], server = data['server'], under_server = data['under_server'])
     else:
         data = await state.get_data()
         cur_id = data.get("id")
@@ -251,6 +256,3 @@ async def change_diamond_count_process(message:types.Message, state:FSMContext, 
     data = await state.get_data()
     db["l2m"].update_one({"_id":data.get("id")}, {"$set":{"name":int(message.text)}})
     await one_diamond_offer(state=state, db=db, msg=message)
-
-
-

@@ -4,7 +4,10 @@ from pymongo.database import Database
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from keyboards.deals_kb import active_deals_kb, game_converter, status, one_active_deal_kb_buyer, one_active_deal_kb_seller
 from bson.objectid import ObjectId
-from games.l2m.buy.buy import diamond_seller_start, accounts_seller_start, things_seller_start, services_seller_start
+from games.l2m.buy.diamonds import diamond_seller_start
+from games.l2m.buy.accounts import accounts_seller_start
+from games.l2m.buy.things import things_seller_start
+from games.l2m.buy.services import services_seller_start
 from keyboards.menu import menu_kb
 from reviews.reviews_add import reviews_add
 

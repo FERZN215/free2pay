@@ -19,16 +19,13 @@ from personal_area.handlers.all_offers_handlers import all_offers_handlers
 
 from balance.b_add import *
 from balance.b_out import *
-from aiogram.types import  ReplyKeyboardMarkup
 
 from start.personal_area import Profile
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from games.l2m.sell.handlers.services_handlers import services_sell_handlers
 from games.l2m.sell.handlers.diamonds_handler import diamonds_sell_handlers
 from games.l2m.sell.handlers.accounts_handler import accounts_sell_handlers
 from games.l2m.sell.handlers.things_handler import things_sell_handlers
-
 
 
 from games.l2m.buy.handlers.diamonds_buy_handler import diamonds_buy_handlers
@@ -81,10 +78,18 @@ async def nickname_handler(message:types.Message, state:FSMContext):
 async def password_handler(message:types.Message, state:FSMContext):
     await password_process(message, state, db)
 
-@dp.message_handler(content_types=['web_app_data'])
-async def web_app(message:types.Message):
-    print(1)
-    await message.answer(message.web_app_data.data)
+from games.l2m.category_manager import l2m_web_manager
+
+@dp.message_handler(content_types="web_app_data") #получаем отправленные данные 
+async def answer(webAppMes:types.Message, state:FSMContext):
+
+
+    data = json.loads(webAppMes.web_app_data.data)
+    match data['game']:
+        case "game_lage2m":
+            await l2m_web_manager(webAppMes, data['category'], state, db)
+
+  
 
 @dp.message_handler()
 async def menu_handler(message:types.Message, state:FSMContext):
@@ -103,8 +108,10 @@ async def menu_handler(message:types.Message, state:FSMContext):
         case "мои чаты":
             await chats_list(message, state, db)
         case "поддержка":
-            
             await message.answer("Поддерживаю", reply_markup=menu_kb)
+        case "в главное меню":
+            await state.finish()
+            await message.answer("Меню", reply_markup=menu_kb)
        
     
 @dp.message_handler(state= balance_out_states.sum_out)

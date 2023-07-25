@@ -5,7 +5,6 @@ from aiogram import Dispatcher, Bot
 from functools import partial
 from chat.chat import chat_start
 from ..diamonds import *
-from ..buy import diamond_buy_process
 from reviews.reviews import view_reviews
 
 async def diamonds_kb_handler(call:types.CallbackQuery, state:FSMContext, db:Database):
